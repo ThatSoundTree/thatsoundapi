@@ -36,6 +36,11 @@ class Settings(BaseSettings):
     # Logging Configuration
     LOG_LEVEL: Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"] = "INFO"
 
+    # Database Engine Configuration
+    DB_ECHO: bool = Field(default=False, description="Enable SQL query logging")
+    DB_POOL_SIZE: int = Field(default=10, ge=1, description="Database connection pool size")
+    DB_MAX_OVERFLOW: int = Field(default=20, ge=0, description="Maximum overflow connections")
+
     model_config = SettingsConfigDict(
         env_file=".env", case_sensitive=False, extra="ignore", env_prefix="BACKEND_"
     )
