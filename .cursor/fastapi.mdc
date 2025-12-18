@@ -1,6 +1,6 @@
 ---
-description: 
-globs: 
+description:
+globs:
 alwaysApply: true
 ---
 ---
@@ -147,4 +147,3 @@ alwaysApply: false
 ## Import Rules
 
 @import python.mdc
-
