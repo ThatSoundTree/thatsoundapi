@@ -1,0 +1,67 @@
+---
+description:
+globs:
+alwaysApply: true
+---
+---
+description: Python Development Rules
+globs: "*.py"
+alwaysApply: true
+---
+
+## Async Python Best Practices
+
+- Use Python 3.13+ async features and idioms
+- Use type hints everywhere with proper generic types
+- Prefer async/await, prohibit blocking calls (use `aiohttp` instead of `requests`, `asyncio.sleep` instead of `time.sleep`)
+- Avoid global state; use dependency injection and context managers
+- Use `ruff` (replaces `flake8`, `black`, `isort`) and `mypy` for linting and type checks
+- Never commit secrets or hardcoded passwords; use environment variables or secret management
+- Prohibit use of `eval` and `exec` for security
+- Use `asyncio.TaskGroup` (Python 3.11+) over `asyncio.gather()` for better error handling
+- Prefer `asyncio.timeout()` context manager over `asyncio.wait_for()`
+
+## Error Handling
+
+- Use specific exception types appropriate to your libraries (`asyncpg.PostgresError`, `aiohttp.ClientError`, etc.)
+- Implement proper cleanup in `finally` blocks with `await`
+- Log errors with contextual information before re-raising
+- Avoid `return` statements in `try` blocks when `finally` blocks contain critical cleanup; prefer a single return statement at the end of the function as the safest approach, as returns inside try blocks can reduce readability and complicate control flow
+- Use context managers to ensure proper resource cleanup
+- Implement circuit breaker patterns for external service failures
+
+## Connection Management
+
+- Always use connection pooling for database connections
+- Properly await `pool.close()` and `pool.wait_closed()` in cleanup
+- Implement timeouts for all network operations using `asyncio.timeout()`
+- Use connection retry logic with exponential backoff
+- Monitor connection pool health and metrics
+
+## Performance Patterns
+
+- Use `asyncio.create_task()` for fire-and-forget operations
+- Use `asyncio.TaskGroup` for structured concurrency
+- Implement proper backpressure mechanisms with semaphores
+- Use context managers with `async with` wherever possible
+- Leverage `async for` for async iteration patterns
+- Use `asyncio.Semaphore` to limit concurrent operations
+
+## Security Best Practices
+
+- Use `secrets` module for cryptographic operations, never `random`
+- Validate all input data with `Pydantic` models
+- Use parameterized queries to prevent SQL injection
+- Never log sensitive data (passwords, tokens, API keys)
+- Use HTTPS/TLS for all external communications
+
+## Modern Python Features (3.11+)
+- Use `typing.override` decorator for method overrides
+- Leverage `match` statements for complex conditional logic
+- Use `tomllib` for TOML configuration parsing
+- Utilize improved error messages and stack traces
+- Use `Self` type hint for methods returning class instances
+- Always ask to install missed python dependencies
+- Always use `Sphinx Style` for docstrings and don't describe classes
+- Always write docstrings in English
+- Use lazy % formatting in logging functions

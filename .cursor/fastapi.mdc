@@ -1,0 +1,149 @@
+---
+description:
+globs:
+alwaysApply: true
+---
+---
+description: Python FastAPI Scalable API Development Rules
+globs: "*.py"
+alwaysApply: false
+---
+
+## Key Principles
+
+- Write concise, technical responses with accurate Python examples.
+- Prefer iteration and modularization over code duplication.
+- Use descriptive variable names with auxiliary verbs.
+- Use lowercase with underscores for directories and files.
+- Favor named exports for routes and utility functions.
+- Use the Receive an Object, Return an Object (RORO) pattern.
+
+## Coding Conventions
+
+- Follow PEP 8 guidelines for style and formatting and divide large scripts into smaller functions/classes.
+- Use type hints for improving code readability and maintainability.
+- Implement logging for tracking AI processing and flow.
+- Document all endpoints with OpenAPI and docstrings.
+
+## Python FastAPI
+
+- All endpoints must be `async def`.
+- Use `def` for pure functions and `async def` for asynchronous operations.
+- Use type hints for function signatures. Prefer Pydantic models for input validation.
+- Structured directories for routers, utilities, static content, types.
+- Prefer APIRouter for modular route organization.
+- Use dependency injection for shared resources.
+- Avoid global state; prefer FastAPI's dependency system.
+- Implement rate limiting for `async` endpoints
+
+## Error Handling and Validation
+
+- Handle errors and edge cases at the start of functions.
+- Happy path last for readability, avoid unnecessary else statements.
+- Use guard clauses to manage preconditions.
+- Implement proper error logging and user-friendly messages.
+- Use custom error types or factories consistently.
+
+## Dependencies
+
+- Always use the most recent stable versions of dependencies
+- `FastAPI` 0.100+
+- `Pydantic` v2.0+
+- Async database libraries (`asyncpg` for PostgreSQL)
+- `SQLAlchemy` 2.0+ with `async` support
+- `SQLModel` (built on Pydantic v2)
+- `python-multipar`t for file upload support
+- `python-jose` or `PyJWT` for JWT token handling
+
+## FastAPI Specific Guidelines
+
+- Use functional components and `Pydantic` models for validation.
+- Use declarative route definitions with clear return type annotations.
+- Minimize event handlers, prefer lifespan context managers.
+- Use middleware for logging, error monitoring, optimization.
+- Optimize for performance using `async` functions for I/O-bound tasks, caching, and lazy loading.
+- Use `HTTPException` for expected errors modelled as specific HTTP responses.
+- Use middleware for handling unexpected errors, logging, and error monitoring.
+- Utilize Pydantic's `BaseModel` for consistent input/output validation and response schemas.
+- Use background tasks for long-running operations.
+
+## Security Best Practices
+
+- Always validate input with Pydantic models
+- Use HTTPS in production with proper TLS configuration
+- Implement proper authentication and authorization patterns
+- Use dependency injection for security (OAuth2, JWT)
+- Sanitize all user inputs to prevent injection attacks
+- Implement CORS properly for cross-origin requests
+- Use security headers middleware
+- Never log sensitive data (passwords, tokens, API keys)
+- Implement API versioning for backward compatibility
+
+## Database Integration
+
+- Use connection pooling with proper pool size configuration
+- Implement database migrations with `Alembic`
+- Use database sessions as dependencies, not global state
+- Implement proper transaction handling with rollback on errors
+- Use database indexes for frequently queried fields
+- Implement pagination for large datasets with cursor-based pagination
+- Use database-specific features (JSON columns, full-text search)
+- Monitor database connection health and metrics
+
+## Performance Optimization
+
+- Use async/await for all I/O operations (database, HTTP requests, file operations)
+- Implement multi-level caching strategies:
+  - `Redis` for distributed caching
+  - In-memory caching for static data
+  - HTTP caching headers for client-side caching
+- Optimize Pydantic models:
+  - Use `model_validate()` for efficient parsing
+  - Leverage Pydantic's performance mode in production
+  - Use `exclude_unset=True` to reduce payload size
+- Implement proper pagination and filtering for large datasets
+- Use compression middleware for large responses
+- Monitor and optimize database query performance
+
+## Key Conventions
+
+- Use FastAPI's dependency injection system for managing state and resources.
+- Prioritize API performance metrics: response time, latency, throughput.
+- Limit blocking operations, favoring async and non-blocking flows.
+- Utilize dedicated async functions for database/API operations.
+- Structure routes and dependencies clearly for readability and maintainability.
+- Use Pydantic models for request and response validation.
+- Never use the `dict()` function, always use the `model_dump()` function.
+- Never use the `json.dumps()` function, always use the `model_dump_json()` function.
+- Never use the `json.loads()` function, always use the `model_validate_json()` function.
+- Never use the `datetime.utcnow()` function, always use the `datetime.now(UTC)` function.
+- Always define json_encoders for datetime objects.
+
+## Testing Best Practices
+
+- Use FastAPI's TestClient for endpoint testing
+- Implement unit tests for business logic with pytest-asyncio
+- Mock external dependencies and database calls
+- Test error scenarios and edge cases thoroughly
+- Use test fixtures for common setup/teardown
+- Maintain high test coverage (>80%)
+- Implement integration tests for critical user workflows
+
+## Monitoring and Observability
+
+- Implement structured logging with correlation IDs
+- Use metrics collection (`Prometheus`, custom metrics)
+- Implement health checks (`/health` endpoint)
+- Monitor API performance metrics and set up alerting
+- Use request/response logging middleware for debugging
+- Implement proper error tracking and monitoring
+
+## References
+
+- Refer to FastAPI documentation for Data Models, Path Operations, and Middleware best practices.
+- Follow Pydantic v2 documentation for advanced validation patterns.
+- Use SQLAlchemy 2.0 async patterns for database operations.
+
+## Import Rules
+
+@import python.mdc
