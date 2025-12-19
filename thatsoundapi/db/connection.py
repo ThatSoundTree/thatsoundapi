@@ -1,5 +1,3 @@
-"""Database connection management with context variables and transaction handling."""
-
 from contextvars import ContextVar, Token
 
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker

@@ -1,5 +1,3 @@
-"""Database base configuration with engine, sessionmaker, and DI container."""
-
 import punq  # type: ignore[import-untyped]
 from sqlalchemy.ext.asyncio import (
     AsyncSession,
