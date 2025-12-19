@@ -19,7 +19,8 @@ async def get_db_session() -> AsyncSession:
 
 async def get_transaction() -> AsyncGenerator[Transaction, None]:
     """Database transaction dependency. Commits on success, rolls back on exception."""
-    async with Transaction() as transaction:
+    transaction = Transaction()
+    async with transaction:
         yield transaction
 
 

@@ -14,11 +14,10 @@ user_router = APIRouter(tags=["Users"])
 @user_router.post(
     "/{htelegram_id}",
     response_model=SuccessResponse[User],
-    status_code=status.HTTP_201_CREATED,
 )
 async def mention_user(
     htelegram_id: str,
-    transaction: Transaction = Depends(get_transaction),
+    _: Transaction = Depends(get_transaction),
 ) -> SuccessResponse[User] | JSONResponse:
     """Get or create user by hashed Telegram ID."""
     if not htelegram_id or not htelegram_id.strip():
@@ -35,5 +34,5 @@ async def mention_user(
     status_code = status.HTTP_201_CREATED if is_new else status.HTTP_200_OK
     return JSONResponse(
         status_code=status_code,
-        content=response_data.model_dump(exclude_none=True),
+        content=response_data.model_dump(mode="json", exclude_none=True),
     )

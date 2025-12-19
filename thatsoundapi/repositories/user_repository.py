@@ -30,4 +30,5 @@ class UserRepository:
         user = User(htelegram_id=htelegram_id)
         session.add(user)
         await session.flush()
+        await session.refresh(user)
         return user
