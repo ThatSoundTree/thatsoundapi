@@ -24,6 +24,11 @@ class Settings(BaseSettings):
     SPOTIFY_CLIENT_SECRET: SecretStr
     SPOTIFY_REDIRECT_URI: str
     SPOTIFY_REFRESH_TOKEN_TTL: int = Field(default=5184000, gt=0)
+    SPOTIFY_API_BASE_URL: str = Field(default="https://api.spotify.com/v1")
+    SPOTIFY_TOKEN_URL: str = Field(default="https://accounts.spotify.com/api/token")
+    SPOTIFY_AUTHORIZE_URL: str = Field(default="https://accounts.spotify.com/authorize")
+    SPOTIFY_SCOPES: str = Field(default="user-read-recently-played")
+    SPOTIFY_OAUTH_STATE_TTL: int = Field(default=600, gt=0)
     ACCESS_TOKEN_EXP: int = Field(default=3600, gt=0)
     REFRESH_TOKEN_EXP: int = Field(default=604800, gt=0)
 
@@ -31,6 +36,7 @@ class Settings(BaseSettings):
     REDIS_HOST: str = "localhost"
     REDIS_PORT: int = Field(default=6379, ge=1, le=65535)
     REDIS_DB: int = Field(default=0, ge=0)
+    REDIS_USERNAME: str | None = None
     REDIS_PASSWORD: SecretStr | None = None
 
     # Logging Configuration
@@ -75,7 +81,14 @@ class Settings(BaseSettings):
         port = self.REDIS_PORT
         db = self.REDIS_DB
 
-        if self.REDIS_PASSWORD is not None:
+        if self.REDIS_USERNAME and self.REDIS_PASSWORD:
+            username = quote_plus(self.REDIS_USERNAME)
+            password = quote_plus(self.REDIS_PASSWORD.get_secret_value())
+            return f"redis://{username}:{password}@{host}:{port}/{db}"
+        elif self.REDIS_USERNAME:
+            username = quote_plus(self.REDIS_USERNAME)
+            return f"redis://{username}@{host}:{port}/{db}"
+        elif self.REDIS_PASSWORD:
             password = quote_plus(self.REDIS_PASSWORD.get_secret_value())
             return f"redis://:{password}@{host}:{port}/{db}"
         return f"redis://{host}:{port}/{db}"

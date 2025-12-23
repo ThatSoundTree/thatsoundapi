@@ -10,8 +10,8 @@ async def mention_user(htelegram_id: str) -> tuple[User, bool]:
 
     if not user:
         user = await UserRepository.create(htelegram_id=htelegram_id)
-        logger.info(f"Created new user with htelegram_id: {htelegram_id[:8]}...")
+        logger.info("Created new user with htelegram_id: %s...", htelegram_id[:8])
         return user, True
 
-    logger.debug(f"Found existing user with htelegram_id: {htelegram_id[:8]}...")
+    logger.debug("Found existing user with htelegram_id: %s...", htelegram_id[:8])
     return user, False
