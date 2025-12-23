@@ -37,6 +37,5 @@ class SpotifyTrack(BaseModel):
 class RecentTracksResponse(BaseModel):
     """Response model for recently played tracks."""
 
-    htelegram_id: str = Field(..., description="Hashed Telegram user ID (first 8 characters)")
     tracks: List[SpotifyTrack] = Field(..., description="List of recently played tracks")
     count: int = Field(..., description="Number of tracks returned")
