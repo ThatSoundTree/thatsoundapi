@@ -23,8 +23,9 @@ async def mention_user(
     if not htelegram_id or not htelegram_id.strip():
         raise BadRequestException("htelegram_id cannot be empty")
 
-    user_db, is_new = await mention_user_service(htelegram_id)
+    user_db, is_new, integrations = await mention_user_service(htelegram_id)
     user_data = User.model_validate(user_db)
+    user_data.integrations = integrations
 
     response_data = create_success_response(
         data=user_data,
