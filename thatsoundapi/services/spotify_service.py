@@ -233,12 +233,22 @@ class SpotifyService:
         for item in items[:limit]:
             track = item.get("track", {})
             artists = [artist.get("name") for artist in track.get("artists", [])]
+            album = track.get("album", {})
+
+            # Get album cover URL (prefer medium size, fallback to first available)
+            album_cover_url = None
+            album_images = album.get("images", [])
+            if album_images:
+                # Prefer medium size (640x640), fallback to largest (first) or smallest (last)
+                medium_image = next((img for img in album_images if img.get("height") == 640), None)
+                album_cover_url = (medium_image or album_images[0] or {}).get("url")
 
             tracks.append({
                 "id": track.get("id"),
                 "name": track.get("name"),
                 "artists": artists,
-                "album": track.get("album", {}).get("name"),
+                "album": album.get("name"),
+                "album_cover_url": album_cover_url,
                 "external_urls": track.get("external_urls", {}).get("spotify"),
                 "played_at": item.get("played_at"),
                 "duration_ms": track.get("duration_ms"),

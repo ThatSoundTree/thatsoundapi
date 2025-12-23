@@ -6,6 +6,7 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from loguru import logger
 
+from thatsoundapi.api.v1.routes.sounds import sounds_router
 from thatsoundapi.api.v1.routes.spotify import spotify_router
 from thatsoundapi.api.v1.routes.users import user_router
 from thatsoundapi.core.exceptions import BaseAPIException, get_error_code_from_status_code
@@ -39,6 +40,7 @@ app = FastAPI(
 )
 
 # Register routers
+app.include_router(sounds_router, prefix="/api/v1/sounds", tags=["Sounds"])
 app.include_router(user_router, prefix="/api/v1/users", tags=["Users"])
 app.include_router(spotify_router, prefix="/api/v1/spotify", tags=["Spotify"])
 
