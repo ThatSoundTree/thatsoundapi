@@ -171,9 +171,20 @@ class SpotifyService:
                 detail="Failed to refresh Spotify token"
             )
 
+        access_token = new_tokens.get("access_token")
+        expires_in = new_tokens.get("expires_in")
+
+        if not access_token:
+            logger.error("Access token missing after refresh", htelegram_id=htelegram_id[:8])
+            raise UnauthorizedException(detail="Access token missing after refresh")
+
+        if expires_in is None:
+            logger.error("Expires_in missing after refresh", htelegram_id=htelegram_id[:8])
+            raise UnauthorizedException(detail="Expires_in missing after refresh")
+
         return {
-            "access_token": new_tokens["access_token"],
-            "expires_in": new_tokens["expires_in"],
+            "access_token": str(access_token),
+            "expires_in": int(expires_in),
             "token_type": new_tokens.get("token_type", "Bearer"),
         }
 
