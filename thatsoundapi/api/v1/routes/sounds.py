@@ -32,7 +32,6 @@ async def get_recent_tracks(
     logger.success("[%s] [spotify] recent tracks retrieved", htelegram_id[:8])
 
     response_data = RecentTracksResponse(
-        htelegram_id=htelegram_id[:8],
         tracks=tracks,
         count=len(tracks),
     )

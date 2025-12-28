@@ -27,7 +27,7 @@ class Settings(BaseSettings):
     SPOTIFY_API_BASE_URL: str = Field(default="https://api.spotify.com/v1")
     SPOTIFY_TOKEN_URL: str = Field(default="https://accounts.spotify.com/api/token")
     SPOTIFY_AUTHORIZE_URL: str = Field(default="https://accounts.spotify.com/authorize")
-    SPOTIFY_SCOPES: str = Field(default="user-read-recently-played")
+    SPOTIFY_SCOPES: str = Field(default="user-read-recently-played streaming")
     SPOTIFY_OAUTH_STATE_TTL: int = Field(default=600, gt=0)
     ACCESS_TOKEN_EXP: int = Field(default=3600, gt=0)
     REFRESH_TOKEN_EXP: int = Field(default=604800, gt=0)

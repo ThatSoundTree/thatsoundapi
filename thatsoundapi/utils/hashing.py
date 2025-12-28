@@ -11,5 +11,5 @@ def hash_telegram_id(telegram_id: int | str, use_sha3: bool = False) -> str:
     return hmac.new(
         secret_key.encode(),
         str(telegram_id).encode(),
-        algorithm,
+        digestmod=algorithm,
     ).hexdigest()
