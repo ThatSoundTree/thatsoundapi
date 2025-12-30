@@ -19,6 +19,10 @@ class Settings(BaseSettings):
     # Security
     SECRET_KEY: SecretStr
 
+    # TSDirect API Configuration
+    TSDIRECT_SECRET_KEY: SecretStr = Field(..., description="Bearer secret token for TSDirect API authentication")
+    TSDIRECT_API_BASE_URL: str = Field(..., description="Base URL for TSDirect API")
+
     # Spotify API Configuration
     SPOTIFY_CLIENT_ID: str
     SPOTIFY_CLIENT_SECRET: SecretStr

@@ -18,7 +18,7 @@ spotify_router = APIRouter(tags=["Spotify"])
 @spotify_router.get("/login/{htelegram_id}")
 async def spotify_login(htelegram_id: str) -> RedirectResponse:
     """Redirect user to Spotify login page."""
-    logger.info("[%s] [spotify] login initiated", htelegram_id[:8])
+    logger.info("[{htelegram_id}] [spotify] login initiated", htelegram_id=htelegram_id[:8])
 
     settings = get_settings()
     state = secrets.token_hex(16)
@@ -46,16 +46,16 @@ async def spotify_callback(
     """Callback from Spotify OAuth."""
     htelegram_id = await SpotifyRepository.get_oauth_state(state)
     if not htelegram_id:
-        logger.warning("[spotify] invalid or expired OAuth state: %s", state[:8])
+        logger.warning("[spotify] invalid or expired OAuth state: {state}", state=state[:8])
         raise BadRequestException(detail="Invalid or expired state")
 
-    logger.info("[%s] [spotify] OAuth callback processing", htelegram_id[:8])
+    logger.info("[{htelegram_id}] [spotify] OAuth callback processing", htelegram_id=htelegram_id[:8])
     await SpotifyRepository.delete_oauth_state(state)
 
     settings = get_settings()
     await SpotifyService.handle_oauth_callback(code, settings.SPOTIFY_REDIRECT_URI, htelegram_id)
 
-    logger.success("[%s] [spotify] OAuth completed successfully", htelegram_id[:8])
+    logger.success("[{htelegram_id}] [spotify] OAuth completed successfully", htelegram_id=htelegram_id[:8])
     status_response = StatusResponse(
         htelegram_id=htelegram_id[:8],
         status="success",
@@ -74,11 +74,11 @@ async def spotify_callback(
 )
 async def refresh_spotify_tokens(htelegram_id: str) -> SuccessResponse[TokenRefreshResponse] | JSONResponse:
     """Manually refresh Spotify tokens."""
-    logger.info("[%s] [spotify] manual token refresh requested", htelegram_id[:8])
+    logger.info("[{htelegram_id}] [spotify] manual token refresh requested", htelegram_id=htelegram_id[:8])
 
     refreshed = await SpotifyService.refresh_token(htelegram_id)
 
-    logger.success("[%s] [spotify] manual token refresh completed", htelegram_id[:8])
+    logger.success("[{htelegram_id}] [spotify] manual token refresh completed", htelegram_id=htelegram_id[:8])
 
     token_response = TokenRefreshResponse(
         htelegram_id=htelegram_id[:8],
@@ -99,11 +99,11 @@ async def refresh_spotify_tokens(htelegram_id: str) -> SuccessResponse[TokenRefr
 )
 async def revoke_spotify_tokens(htelegram_id: str) -> SuccessResponse[StatusResponse] | JSONResponse:
     """Revoke and delete Spotify tokens for a user."""
-    logger.info("[%s] [spotify] revoking tokens", htelegram_id[:8])
+    logger.info("[{htelegram_id}] [spotify] revoking tokens", htelegram_id=htelegram_id[:8])
 
     await SpotifyRepository.delete_spotify_tokens(htelegram_id)
 
-    logger.success("[%s] [spotify] tokens revoked", htelegram_id[:8])
+    logger.success("[{htelegram_id}] [spotify] tokens revoked", htelegram_id=htelegram_id[:8])
 
     status_response = StatusResponse(
         htelegram_id=htelegram_id[:8],

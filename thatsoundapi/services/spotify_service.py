@@ -101,57 +101,49 @@ class SpotifyService:
                 detail="Refresh token not available"
             )
 
-        try:
-            settings = get_settings()
-            auth_header = SpotifyService._get_auth_header()
+        settings = get_settings()
+        auth_header = SpotifyService._get_auth_header()
 
-            async with httpx.AsyncClient() as client:
-                token_response = await client.post(
-                    settings.SPOTIFY_TOKEN_URL,
-                    data={
-                        "grant_type": "refresh_token",
-                        "refresh_token": refresh_token,
-                    },
-                    headers={
-                        "Authorization": f"Basic {auth_header}",
-                        "Content-Type": "application/x-www-form-urlencoded",
-                    },
-                )
-
-            if token_response.status_code != 200:
-                logger.error(
-                    "Failed to refresh Spotify token",
-                    htelegram_id=htelegram_id[:8],
-                    status_code=token_response.status_code,
-                    response=token_response.text[:200],
-                )
-                raise UnauthorizedException(
-                    detail="Failed to refresh Spotify token"
-                )
-
-            new_tokens = token_response.json()
-
-            await SpotifyRepository.update_spotify_access_token(
-                htelegram_id=htelegram_id,
-                access_token=new_tokens["access_token"],
-                expires_in=new_tokens["expires_in"],
+        async with httpx.AsyncClient() as client:
+            token_response = await client.post(
+                settings.SPOTIFY_TOKEN_URL,
+                data={
+                    "grant_type": "refresh_token",
+                    "refresh_token": refresh_token,
+                },
+                headers={
+                    "Authorization": f"Basic {auth_header}",
+                    "Content-Type": "application/x-www-form-urlencoded",
+                },
             )
 
-            if "refresh_token" in new_tokens:
-                logger.info("New refresh token received", htelegram_id=htelegram_id[:8])
-                await SpotifyRepository.save_spotify_tokens(
-                    htelegram_id=htelegram_id,
-                    access_token=new_tokens["access_token"],
-                    refresh_token=new_tokens["refresh_token"],
-                    expires_in=new_tokens["expires_in"],
-                    token_type=new_tokens.get("token_type", "Bearer"),
-                )
-        except UnauthorizedException:
-            raise
-        except Exception as e:
-            logger.exception("Unexpected error during token refresh", htelegram_id=htelegram_id[:8], error=str(e))
+        if token_response.status_code != 200:
+            logger.error(
+                "Failed to refresh Spotify token",
+                htelegram_id=htelegram_id[:8],
+                status_code=token_response.status_code,
+                response=token_response.text[:200],
+            )
             raise UnauthorizedException(
                 detail="Failed to refresh Spotify token"
+            )
+
+        new_tokens = token_response.json()
+
+        await SpotifyRepository.update_spotify_access_token(
+            htelegram_id=htelegram_id,
+            access_token=new_tokens["access_token"],
+            expires_in=new_tokens["expires_in"],
+        )
+
+        if "refresh_token" in new_tokens:
+            logger.info("New refresh token received", htelegram_id=htelegram_id[:8])
+            await SpotifyRepository.save_spotify_tokens(
+                htelegram_id=htelegram_id,
+                access_token=new_tokens["access_token"],
+                refresh_token=new_tokens["refresh_token"],
+                expires_in=new_tokens["expires_in"],
+                token_type=new_tokens.get("token_type", "Bearer"),
             )
 
     @staticmethod

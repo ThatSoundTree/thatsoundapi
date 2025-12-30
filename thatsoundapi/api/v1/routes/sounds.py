@@ -24,12 +24,12 @@ async def get_recent_tracks(
     if not htelegram_id or not htelegram_id.strip():
         raise BadRequestException("htelegram_id cannot be empty")
 
-    logger.info("[%s] [spotify] fetching recent tracks", htelegram_id[:8])
+    logger.info("[{htelegram_id}] [spotify] fetching recent tracks", htelegram_id=htelegram_id[:8])
     tracks_data = await SpotifyService.get_recently_played_tracks(htelegram_id, limit=5)
 
     tracks = [SpotifyTrack(**track) for track in tracks_data]
 
-    logger.success("[%s] [spotify] recent tracks retrieved", htelegram_id[:8])
+    logger.success("[{htelegram_id}] [spotify] recent tracks retrieved", htelegram_id=htelegram_id[:8])
 
     response_data = RecentTracksResponse(
         tracks=tracks,
