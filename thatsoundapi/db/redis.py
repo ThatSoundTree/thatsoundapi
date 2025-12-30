@@ -1,5 +1,6 @@
 import time
-from typing import Literal
+from collections.abc import Awaitable
+from typing import Literal, cast
 
 import redis.asyncio as redis
 from loguru import logger
@@ -118,7 +119,7 @@ class RedisClient:
         key = f"spotify:tokens:{htelegram_id}"
         expires_at = int(time.time()) + expires_in
 
-        result = client.hset(
+        await cast(Awaitable[int], client.hset(
             key,
             mapping={
                 "access_token": access_token,
@@ -127,17 +128,14 @@ class RedisClient:
                 "expires_at": str(expires_at),
                 "expires_in": str(expires_in),
             }
-        )
-        if hasattr(result, "__await__"):
-            await result
+        ))
 
     @classmethod
     async def get_spotify_tokens(cls, htelegram_id: str) -> dict[str, str | int] | None:
         client = cls._ensure_connected()
         key = f"spotify:tokens:{htelegram_id}"
 
-        result = client.hgetall(key)
-        tokens: dict[str, str] = await result if hasattr(result, "__await__") else result
+        tokens: dict[str, str] = await cast(Awaitable[dict[str, str]], client.hgetall(key))
         if not tokens:
             return None
 
@@ -162,16 +160,14 @@ class RedisClient:
 
             expires_at = int(time.time()) + expires_in
 
-            result = client.hset(
+            await cast(Awaitable[int], client.hset(
                 key,
                 mapping={
                     "access_token": access_token,
                     "expires_at": str(expires_at),
                     "expires_in": str(expires_in),
                 }
-            )
-            if hasattr(result, "__await__"):
-                await result
+            ))
         except Exception as e:
             logger.exception("Failed to update Spotify access token", htelegram_id=htelegram_id[:8], error=str(e))
             raise
