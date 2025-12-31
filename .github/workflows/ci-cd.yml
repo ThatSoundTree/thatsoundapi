@@ -1,0 +1,150 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - dev
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: latest
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+
+      - name: Load cached venv
+        id: cached-poetry-dependencies
+        uses: actions/cache@v4
+        with:
+          path: .venv
+          key: venv-${{ runner.os }}-${{ hashFiles('**/poetry.lock') }}
+
+      - name: Install dependencies
+        if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
+        run: poetry install --no-interaction --no-ansi
+
+      - name: Run Ruff
+        run: poetry run ruff check .
+
+      - name: Run MyPy
+        run: poetry run mypy .
+
+  deploy:
+    name: Deploy
+    needs: lint
+    runs-on: ubuntu-latest
+    environment: DEV
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Validate required secrets
+        run: |
+          if [ -z "${{ secrets.DEV_SSH_PRIVATE_KEY }}" ]; then
+            echo "Error: DEV_SSH_PRIVATE_KEY secret is not set"
+            echo "Please configure it in: Settings → Secrets and variables → Actions"
+            exit 1
+          fi
+          if [ -z "${{ secrets.DEV_SSH_USER }}" ]; then
+            echo "Error: DEV_SSH_USER secret is not set"
+            exit 1
+          fi
+          if [ -z "${{ secrets.DEV_SSH_HOST }}" ]; then
+            echo "Error: DEV_SSH_HOST secret is not set"
+            exit 1
+          fi
+          if [ -z "${{ secrets.DEV_SSH_PROJECT_PATH }}" ]; then
+            echo "Error: DEV_SSH_PROJECT_PATH secret is not set"
+            exit 1
+          fi
+          if [ -z "${{ secrets.DEV_ENV_FILE }}" ]; then
+            echo "Error: DEV_ENV_FILE secret is not set"
+            exit 1
+          fi
+          echo "All required secrets are configured"
+
+      - name: Prepare SSH key
+        run: |
+          touch private_key
+          echo -e "${{ secrets.DEV_SSH_PRIVATE_KEY }}" > private_key
+          chmod 600 private_key
+
+      - name: Add server to known hosts
+        run: |
+          ssh -i private_key -o StrictHostKeyChecking=accept-new ${{ secrets.DEV_SSH_USER }}@${{ secrets.DEV_SSH_HOST }} exit
+
+      - name: Create .env file on server
+        run: |
+          ssh -i private_key ${{ secrets.DEV_SSH_USER }}@${{ secrets.DEV_SSH_HOST }} "mkdir -p ${{ secrets.DEV_SSH_PROJECT_PATH }} && echo '${{ secrets.DEV_ENV_FILE }}' > ${{ secrets.DEV_SSH_PROJECT_PATH }}/.env"
+
+      - name: Deploy to server
+        run: |
+          ssh -i private_key ${{ secrets.DEV_SSH_USER }}@${{ secrets.DEV_SSH_HOST }} bash -s << EOF
+            set -e
+            PROJECT_PATH="${{ secrets.DEV_SSH_PROJECT_PATH }}"
+            GITHUB_REPO="${{ github.repository }}"
+            GITHUB_TOKEN="${{ secrets.GITHUB_TOKEN }}"
+
+            mkdir -p \${PROJECT_PATH}
+            cd \${PROJECT_PATH}
+
+            if [ -d .git ]; then
+              echo "Git repository exists, pulling latest changes..."
+              docker stop thatsoundapi-dev 2>/dev/null || true
+              docker rm thatsoundapi-dev 2>/dev/null || true
+              git remote set-url origin https://x-access-token:\${GITHUB_TOKEN}@github.com/\${GITHUB_REPO}.git
+              git fetch origin
+              git checkout dev
+              git pull origin dev
+            else
+              echo "Git repository not found, cloning..."
+              rm -rf \${PROJECT_PATH}/* \${PROJECT_PATH}/.* 2>/dev/null || true
+              GIT_TERMINAL_PROMPT=0 GIT_ASKPASS=echo git -c credential.helper= clone https://x-access-token:\${GITHUB_TOKEN}@github.com/\${GITHUB_REPO}.git .
+              git checkout dev
+            fi
+
+            docker network create thatsound-network 2>/dev/null || true
+
+            if ! docker ps | grep -q thatsoundapi_redis; then
+              echo "Warning: Redis container (thatsoundapi_redis) not found."
+              echo "Please ensure Redis is running via docker-compose up -d redis"
+            else
+              docker network connect thatsound-network thatsoundapi_redis 2>/dev/null || true
+              echo "Redis container found and connected to network"
+            fi
+
+            if ! docker ps | grep -q thatsoundapi_postgres; then
+              echo "Warning: PostgreSQL container (thatsoundapi_postgres) not found."
+              echo "Please ensure PostgreSQL is running via docker-compose up -d postgres"
+            else
+              docker network connect thatsound-network thatsoundapi_postgres 2>/dev/null || true
+              echo "PostgreSQL container found and connected to network"
+            fi
+
+            docker build -t thatsoundapi-dev:latest .
+
+            docker run -d \
+              --name thatsoundapi-dev \
+              --network thatsound-network \
+              --restart unless-stopped \
+              -p 8000:8000 \
+              --env-file .env \
+              thatsoundapi-dev:latest
+
+            docker image prune -f
+          EOF
