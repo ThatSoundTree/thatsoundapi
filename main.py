@@ -55,7 +55,7 @@ async def api_exception_handler(request: Request, exc: BaseAPIException) -> JSON
         JSONResponse with unified error format
     """
     logger.error(
-        "API exception: %s at %s [%s]",
+        "API exception: {} at {} [{}]",
         exc.detail,
         request.url.path,
         request.method,
@@ -87,7 +87,7 @@ async def general_exception_handler(request: Request, exc: Exception) -> JSONRes
         JSONResponse with unified error format
     """
     logger.exception(
-        "Unexpected error at %s [%s]",
+        "Unexpected error at {} [{}]",
         request.url.path,
         request.method,
     )
