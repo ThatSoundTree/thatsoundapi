@@ -138,6 +138,9 @@ jobs:
 
             docker build -t thatsoundapi-dev:latest .
 
+            docker stop thatsoundapi-dev 2>/dev/null || true
+            docker rm thatsoundapi-dev 2>/dev/null || true
+
             docker run -d \
               --name thatsoundapi-dev \
               --network thatsound-network \
