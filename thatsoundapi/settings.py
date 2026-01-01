@@ -17,10 +17,10 @@ class Settings(BaseSettings):
     POSTGRES_PASSWORD: SecretStr
 
     # Security
-    SECRET_KEY: SecretStr
+    TELEGRAM_HASH_KEY: SecretStr = Field(..., description="Secret key for hashing telegram_id to htelegram_id")
 
     # TSDirect API Configuration
-    TSDIRECT_SECRET_KEY: SecretStr = Field(..., description="Bearer secret token for TSDirect API authentication")
+    TO_DIRECT_AUTH_KEY: SecretStr = Field(..., description="Bearer token for authentication with thatsounddirect API")
     TSDIRECT_API_BASE_URL: str = Field(..., description="Base URL for TSDirect API")
 
     # Spotify API Configuration
