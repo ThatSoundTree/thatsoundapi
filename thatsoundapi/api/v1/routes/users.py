@@ -5,7 +5,7 @@ from thatsoundapi.db.connection import Transaction
 from thatsoundapi.db.dependencies import get_transaction
 from thatsoundapi.services.integrations_service import user_integrations_service
 
-user_router = APIRouter(tags=["Users"])
+user_router = APIRouter(tags=["Main"])
 
 
 @user_router.get(

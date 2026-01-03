@@ -1,13 +1,15 @@
 from thatsoundapi.core.exceptions import (
-    BadRequestException,
+    BadRequestError,
     BaseAPIException,
-    ConflictException,
+    ConflictError,
     DatabaseError,
-    ForbiddenException,
+    HgramidNotFoundError,
+    ForbiddenError,
     InternalServerError,
-    NotFoundException,
-    NotImplementedException,
-    UnauthorizedException,
+    InvalidOAuthStateError,
+    NotFoundError,
+    NotImplementedError,
+    UnauthorizedError,
     get_error_code_from_status_code,
 )
 from thatsoundapi.core.responses import (
@@ -20,15 +22,18 @@ from thatsoundapi.core.responses import (
 
 __all__ = [
     # Exceptions
-    "BadRequestException",
-    "BaseAPIException",
-    "ConflictException",
-    "DatabaseError",
-    "ForbiddenException",
+    "BadRequestError",
+    "ConflictError",
+    "ForbiddenError",
     "InternalServerError",
-    "NotFoundException",
-    "NotImplementedException",
-    "UnauthorizedException",
+    "NotFoundError",
+    "NotImplementedError",
+    "UnauthorizedError",
+    # Base and specific exceptions
+    "BaseAPIException",
+    "DatabaseError",
+    "HgramidNotFoundError",
+    "InvalidOAuthStateError",
     "get_error_code_from_status_code",
     # Responses
     "APIResponse",

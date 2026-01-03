@@ -1,8 +1,9 @@
 from typing import Any, cast
 
+from fastapi import status
 from loguru import logger
 
-from thatsoundapi.core.exceptions import BadRequestException, UnauthorizedException
+from thatsoundapi.core.exceptions import BadRequestError, UnauthorizedError
 from thatsoundapi.settings import get_settings
 from thatsoundapi.utils.http_client import TSDirectHTTPClient
 
@@ -20,7 +21,7 @@ class TaskService:
 
         if response.status_code == 401:
             logger.error("TSDirect API authentication failed")
-            raise UnauthorizedException(detail="TSDirect API authentication failed")
+            raise UnauthorizedError(status.HTTP_401_UNAUTHORIZED, "TSDirect API authentication failed")
 
         if response.status_code not in (200, 201):
             error_text = response.text[:200]
@@ -29,7 +30,7 @@ class TaskService:
                 status_code=response.status_code,
                 error=error_text,
             )
-            raise BadRequestException(detail="Failed to create task in TSDirect")
+            raise BadRequestError(status.HTTP_400_BAD_REQUEST, "Failed to create task in TSDirect")
 
         return cast(dict[str, Any], response.json())
 
@@ -43,11 +44,11 @@ class TaskService:
 
         if response.status_code == 401:
             logger.error("TSDirect API authentication failed")
-            raise UnauthorizedException(detail="TSDirect API authentication failed")
+            raise UnauthorizedError(status.HTTP_401_UNAUTHORIZED, "TSDirect API authentication failed")
 
         if response.status_code == 404:
             logger.warning("Task not found", task_id=task_id)
-            raise BadRequestException(detail="Task not found")
+            raise BadRequestError(status.HTTP_400_BAD_REQUEST, "Task not found")
 
         if response.status_code != 200:
             error_text = response.text[:200]
@@ -56,7 +57,7 @@ class TaskService:
                 status_code=response.status_code,
                 error=error_text,
             )
-            raise BadRequestException(detail="Failed to get task from TSDirect")
+            raise BadRequestError(status.HTTP_400_BAD_REQUEST, "Failed to get task from TSDirect")
 
         return cast(dict[str, Any], response.json())
 
@@ -70,11 +71,11 @@ class TaskService:
 
         if response.status_code == 401:
             logger.error("TSDirect API authentication failed")
-            raise UnauthorizedException(detail="TSDirect API authentication failed")
+            raise UnauthorizedError(status.HTTP_401_UNAUTHORIZED, "TSDirect API authentication failed")
 
         if response.status_code == 404:
             logger.warning("Task not found", task_id=task_id)
-            raise BadRequestException(detail="Task not found")
+            raise BadRequestError(status.HTTP_400_BAD_REQUEST, "Task not found")
 
         if response.status_code != 200:
             error_text = response.text[:200]
@@ -83,7 +84,7 @@ class TaskService:
                 status_code=response.status_code,
                 error=error_text,
             )
-            raise BadRequestException(detail="Failed to update task in TSDirect")
+            raise BadRequestError(status.HTTP_400_BAD_REQUEST, "Failed to update task in TSDirect")
 
         return cast(dict[str, Any], response.json())
 
@@ -97,11 +98,11 @@ class TaskService:
 
         if response.status_code == 401:
             logger.error("TSDirect API authentication failed")
-            raise UnauthorizedException(detail="TSDirect API authentication failed")
+            raise UnauthorizedError(status.HTTP_401_UNAUTHORIZED, "TSDirect API authentication failed")
 
         if response.status_code == 404:
             logger.warning("Task not found", task_id=task_id)
-            raise BadRequestException(detail="Task not found")
+            raise BadRequestError(status.HTTP_400_BAD_REQUEST, "Task not found")
 
         if response.status_code not in (200, 204):
             error_text = response.text[:200]
@@ -110,7 +111,7 @@ class TaskService:
                 status_code=response.status_code,
                 error=error_text,
             )
-            raise BadRequestException(detail="Failed to delete task from TSDirect")
+            raise BadRequestError(status.HTTP_400_BAD_REQUEST, "Failed to delete task from TSDirect")
 
     @staticmethod
     async def list_tasks(**params: Any) -> list[dict[str, Any]]:
@@ -122,7 +123,7 @@ class TaskService:
 
         if response.status_code == 401:
             logger.error("TSDirect API authentication failed")
-            raise UnauthorizedException(detail="TSDirect API authentication failed")
+            raise UnauthorizedError(status.HTTP_401_UNAUTHORIZED, "TSDirect API authentication failed")
 
         if response.status_code != 200:
             error_text = response.text[:200]
@@ -131,7 +132,7 @@ class TaskService:
                 status_code=response.status_code,
                 error=error_text,
             )
-            raise BadRequestException(detail="Failed to list tasks from TSDirect")
+            raise BadRequestError(status.HTTP_400_BAD_REQUEST, "Failed to list tasks from TSDirect")
 
         result = response.json()
         # Handle both list and dict with 'items' key

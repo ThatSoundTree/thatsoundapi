@@ -4,6 +4,8 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from loguru import logger
 
+from thatsoundapi.api.v1.routes.callback import callback_router
+from thatsoundapi.api.v1.routes.integrations import integrations_router
 from thatsoundapi.api.v1.routes.sounds import sounds_router
 from thatsoundapi.api.v1.routes.spotify import spotify_router
 from thatsoundapi.api.v1.routes.users import user_router
@@ -39,9 +41,10 @@ app = FastAPI(
 
 # Register routers
 app.include_router(sounds_router, prefix="/api/v1/sounds", tags=["Sounds"])
-app.include_router(user_router, prefix="/api/v1/users", tags=["Users"])
-app.include_router(spotify_router, prefix="/api/v1/spotify", tags=["Spotify"])
-
+app.include_router(user_router, prefix="/api/v1", tags=["Main"])
+app.include_router(integrations_router, prefix="/api/v1/{hgramid}/integrations", tags=["Integrations"])
+app.include_router(spotify_router, prefix="/api/v1/{hgramid}/integrations/spotify", tags=["Spotify"])
+app.include_router(callback_router, prefix="/api/v1/callback", tags=["Callback"])
 
 @app.exception_handler(BaseAPIException)
 async def api_exception_handler(request: Request, exc: BaseAPIException) -> JSONResponse:

@@ -18,129 +18,83 @@ def get_error_code_from_status_code(status_code: int) -> str:
 class BaseAPIException(Exception):
     """Base exception for all API exceptions."""
 
-    def __init__(
-        self,
-        detail: str,
-        status_code: int = status.HTTP_500_INTERNAL_SERVER_ERROR,
-        headers: dict[str, str] | None = None,
-    ) -> None:
-        self.status_code = status_code
-        self.detail = detail
-        self.headers = headers
-        super().__init__(self.detail)
+    def __init__(self, code: int, error: str) -> None:
+        super().__init__()
+        self.status_code = code
+        self.detail = error
+
+    def __new__(cls, *args, **kwargs):
+        # Allow using class without parentheses: raise SomeError
+        if not args and not kwargs and hasattr(cls, 'status_code') and hasattr(cls, 'message'):
+            instance = super().__new__(cls)
+            instance.status_code = cls.status_code
+            instance.detail = cls.message
+            return instance
+        return super().__new__(cls)
 
 
-class BadRequestException(BaseAPIException):
+class BadRequestError(BaseAPIException):
     """Bad request error (400)."""
 
-    def __init__(
-        self,
-        detail: str = "Bad request",
-        headers: dict[str, str] | None = None,
-    ) -> None:
-        super().__init__(
-            detail=detail,
-            status_code=status.HTTP_400_BAD_REQUEST,
-            headers=headers,
-        )
+    status_code = status.HTTP_400_BAD_REQUEST
+    message = "Bad request"
 
 
-class UnauthorizedException(BaseAPIException):
+class UnauthorizedError(BaseAPIException):
     """Unauthorized error (401)."""
 
-    def __init__(
-        self,
-        detail: str = "Unauthorized",
-        headers: dict[str, str] | None = None,
-    ) -> None:
-        super().__init__(
-            detail=detail,
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            headers=headers,
-        )
+    status_code = status.HTTP_401_UNAUTHORIZED
+    message = "Unauthorized"
 
 
-class ForbiddenException(BaseAPIException):
+class ForbiddenError(BaseAPIException):
     """Forbidden error (403)."""
 
-    def __init__(
-        self,
-        detail: str = "Forbidden",
-        headers: dict[str, str] | None = None,
-    ) -> None:
-        super().__init__(
-            detail=detail,
-            status_code=status.HTTP_403_FORBIDDEN,
-            headers=headers,
-        )
+    status_code = status.HTTP_403_FORBIDDEN
+    message = "Forbidden"
 
 
-class NotFoundException(BaseAPIException):
+class NotFoundError(BaseAPIException):
     """Not found error (404)."""
 
-    def __init__(
-        self,
-        detail: str = "Not found",
-        headers: dict[str, str] | None = None,
-    ) -> None:
-        super().__init__(
-            detail=detail,
-            status_code=status.HTTP_404_NOT_FOUND,
-            headers=headers,
-        )
+    status_code = status.HTTP_404_NOT_FOUND
+    message = "Not Found"
 
 
-class ConflictException(BaseAPIException):
+class ConflictError(BaseAPIException):
     """Conflict error (409)."""
 
-    def __init__(
-        self,
-        detail: str = "Conflict",
-        headers: dict[str, str] | None = None,
-    ) -> None:
-        super().__init__(
-            detail=detail,
-            status_code=status.HTTP_409_CONFLICT,
-            headers=headers,
-        )
+    status_code = status.HTTP_409_CONFLICT
+    message = "Conflict"
 
 
 class InternalServerError(BaseAPIException):
     """Internal server error (500)."""
 
-    def __init__(
-        self,
-        detail: str = "Internal server error",
-        headers: dict[str, str] | None = None,
-    ) -> None:
-        super().__init__(
-            detail=detail,
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            headers=headers,
-        )
+    status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
+    message = "Internal server error"
 
 
-class NotImplementedException(BaseAPIException):
+class NotImplementedError(BaseAPIException):
     """Not implemented error (501)."""
 
-    def __init__(
-        self,
-        detail: str = "Not implemented",
-        headers: dict[str, str] | None = None,
-    ) -> None:
-        super().__init__(
-            detail=detail,
-            status_code=status.HTTP_501_NOT_IMPLEMENTED,
-            headers=headers,
-        )
+    status_code = status.HTTP_501_NOT_IMPLEMENTED
+    message = "Not implemented"
 
 
 class DatabaseError(InternalServerError):
     """Database error (500)."""
 
-    def __init__(
-        self,
-        detail: str = "Database error",
-        headers: dict[str, str] | None = None,
-    ) -> None:
-        super().__init__(detail=detail, headers=headers)
+    message = "Database error"
+
+
+class HgramidNotFoundError(NotFoundError):
+    """ Telegram ID error (400)."""
+
+    message = "Hgramid not found"
+
+
+class InvalidOAuthStateError(BadRequestError):
+    """Invalid or expired OAuth state error (400)."""
+
+    message = "Invalid or expired OAuth state"

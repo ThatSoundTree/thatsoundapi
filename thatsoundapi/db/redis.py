@@ -53,6 +53,13 @@ class RedisClient:
         return cls._client
 
     @classmethod
+    async def has_spotify_integration(cls, hgramid: str) -> bool:
+        client = cls._ensure_connected()
+        key = f"spotify:tokens:{hgramid}"
+        result = await client.exists(key)
+        return bool(result > 0)
+
+    @classmethod
     async def check_revoked_token(cls, jti: str, token_type: Literal["access", "refresh"] = "access") -> bool:
         client = cls._ensure_connected()
         key = f"jti:{token_type}:{jti}"

@@ -17,7 +17,7 @@ class User(Base):
 
     __tablename__ = "users"
 
-    htelegram_id: Mapped[str] = mapped_column(
+    hgramid: Mapped[str] = mapped_column(
         String,
         primary_key=True,
         index=True,

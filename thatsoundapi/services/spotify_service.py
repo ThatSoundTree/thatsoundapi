@@ -3,9 +3,10 @@ import time
 from typing import List
 
 import httpx
+from fastapi import status
 from loguru import logger
 
-from thatsoundapi.core.exceptions import UnauthorizedException, NotFoundException, BadRequestException
+from thatsoundapi.core.exceptions import UnauthorizedError, NotFoundError, BadRequestError
 from thatsoundapi.repositories.spotify_repository import SpotifyRepository
 from thatsoundapi.settings import get_settings
 
@@ -45,8 +46,8 @@ class SpotifyService:
                 status_code=response.status_code,
                 error=error_text,
             )
-            raise BadRequestException(
-                detail="Failed to exchange code for tokens"
+            raise BadRequestError(
+                status.HTTP_400_BAD_REQUEST, "Failed to exchange code for tokens"
             )
 
         result: dict[str, str | int] = response.json()
@@ -69,8 +70,8 @@ class SpotifyService:
         tokens = await SpotifyRepository.get_spotify_tokens(htelegram_id)
         if not tokens:
             logger.warning("Spotify tokens not found", htelegram_id=htelegram_id[:8])
-            raise UnauthorizedException(
-                detail="Spotify not connected. Please authenticate first."
+            raise UnauthorizedError(
+                status.HTTP_401_UNAUTHORIZED, "Spotify not connected. Please authenticate first."
             )
 
         current_time = int(time.time())
@@ -82,14 +83,14 @@ class SpotifyService:
             tokens = await SpotifyRepository.get_spotify_tokens(htelegram_id)
             if not tokens:
                 logger.error("Failed to get tokens after refresh", htelegram_id=htelegram_id[:8])
-                raise UnauthorizedException(
-                    detail="Failed to refresh Spotify token"
+                raise UnauthorizedError(
+                    status.HTTP_401_UNAUTHORIZED, "Failed to refresh Spotify token"
                 )
             logger.success("Access token refreshed", htelegram_id=htelegram_id[:8])
 
         access_token_value = tokens.get("access_token")
         if not access_token_value or not isinstance(access_token_value, str):
-            raise UnauthorizedException(detail="Invalid access token format")
+            raise UnauthorizedError(status.HTTP_401_UNAUTHORIZED, "Invalid access token format")
         return str(access_token_value)
 
     @staticmethod
@@ -97,8 +98,8 @@ class SpotifyService:
         refresh_token = tokens.get("refresh_token")
         if not refresh_token:
             logger.error("Refresh token not available", htelegram_id=htelegram_id[:8])
-            raise UnauthorizedException(
-                detail="Refresh token not available"
+            raise UnauthorizedError(
+                status.HTTP_401_UNAUTHORIZED, "Refresh token not available"
             )
 
         settings = get_settings()
@@ -124,8 +125,8 @@ class SpotifyService:
                 status_code=token_response.status_code,
                 response=token_response.text[:200],
             )
-            raise UnauthorizedException(
-                detail="Failed to refresh Spotify token"
+            raise UnauthorizedError(
+                status.HTTP_401_UNAUTHORIZED, "Failed to refresh Spotify token"
             )
 
         new_tokens = token_response.json()
@@ -151,16 +152,16 @@ class SpotifyService:
         tokens = await SpotifyRepository.get_spotify_tokens(htelegram_id)
         if not tokens:
             logger.warning("Spotify tokens not found for refresh", htelegram_id=htelegram_id[:8])
-            raise UnauthorizedException(
-                detail="Spotify not connected. Please authenticate first."
+            raise UnauthorizedError(
+                status.HTTP_401_UNAUTHORIZED, "Spotify not connected. Please authenticate first."
             )
 
         await SpotifyService._refresh_access_token(htelegram_id, tokens)
 
         new_tokens = await SpotifyRepository.get_spotify_tokens(htelegram_id)
         if not new_tokens:
-            raise UnauthorizedException(
-                detail="Failed to refresh Spotify token"
+            raise UnauthorizedError(
+                status.HTTP_401_UNAUTHORIZED, "Failed to refresh Spotify token"
             )
 
         access_token = new_tokens.get("access_token")
@@ -168,11 +169,11 @@ class SpotifyService:
 
         if not access_token:
             logger.error("Access token missing after refresh", htelegram_id=htelegram_id[:8])
-            raise UnauthorizedException(detail="Access token missing after refresh")
+            raise UnauthorizedError(status.HTTP_401_UNAUTHORIZED, "Access token missing after refresh")
 
         if expires_in is None:
             logger.error("Expires_in missing after refresh", htelegram_id=htelegram_id[:8])
-            raise UnauthorizedException(detail="Expires_in missing after refresh")
+            raise UnauthorizedError(status.HTTP_401_UNAUTHORIZED, "Expires_in missing after refresh")
 
         return {
             "access_token": str(access_token),
@@ -214,17 +215,15 @@ class SpotifyService:
             error_detail = response.text[:200]
             if response.status_code == 204:
                 logger.info("No recently played tracks found", htelegram_id=htelegram_id[:8])
-                raise NotFoundException(
-                    detail="No recently played tracks found"
-                )
+                raise NotFoundError()
             logger.error(
                 "Spotify API error",
                 htelegram_id=htelegram_id[:8],
                 status_code=response.status_code,
                 error=error_detail,
             )
-            raise UnauthorizedException(
-                detail="Failed to retrieve recently played tracks from Spotify"
+            raise UnauthorizedError(
+                status.HTTP_401_UNAUTHORIZED, "Failed to retrieve recently played tracks from Spotify"
             )
 
         data = response.json()
