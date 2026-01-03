@@ -9,25 +9,25 @@ class UserRepository:
     """User database operations."""
 
     @staticmethod
-    async def get_by_htelegram_id(htelegram_id: str) -> User | None:
+    async def get_by_htelegram_id(hgramid: str) -> User | None:
         """Get user by hashed Telegram ID."""
         session = db_session.get()
         if session is None:
             raise DatabaseError("Database session not found in context")
 
         result = await session.execute(
-            select(User).where(User.htelegram_id == htelegram_id),
+            select(User).where(User.hgramid == hgramid),
         )
         return result.scalar_one_or_none()
 
     @staticmethod
-    async def create(htelegram_id: str) -> User:
+    async def create(hgramid: str) -> User:
         """Create a new user."""
         session = db_session.get()
         if session is None:
             raise DatabaseError("Database session not found in context")
 
-        user = User(htelegram_id=htelegram_id)
+        user = User(hgramid=hgramid)
         session.add(user)
         await session.flush()
         await session.refresh(user)

@@ -1,27 +1,17 @@
 from loguru import logger
 
-from thatsoundapi.api.v1.models.users import Integrations
 from thatsoundapi.db.models import User
-from thatsoundapi.repositories.spotify_repository import SpotifyRepository
 from thatsoundapi.repositories.user_repository import UserRepository
 
 
-async def get_user_integrations(htelegram_id: str) -> Integrations:
-    """Get user integrations status."""
-    spotify_connected = await SpotifyRepository.has_valid_spotify_tokens(htelegram_id)
-    return Integrations(spotify=spotify_connected)
+async def mention_user(hgramid: str) -> tuple[User, bool]:
+    """Get or create user by hashed Telegram ID"""
 
-
-async def mention_user(htelegram_id: str) -> tuple[User, bool, Integrations]:
-    """Get or create user by hashed Telegram ID. Returns (user, is_new, integrations)."""
-    user = await UserRepository.get_by_htelegram_id(htelegram_id)
+    user = await UserRepository.get_by_htelegram_id(hgramid)
 
     if not user:
-        user = await UserRepository.create(htelegram_id=htelegram_id)
-        logger.info("Created new user with htelegram_id: {htelegram_id}...", htelegram_id=htelegram_id[:8])
-        integrations = await get_user_integrations(htelegram_id)
-        return user, True, integrations
+        user = await UserRepository.create(htelegram_id=hgramid)
+        logger.info("[{hgramid}]: Created", hgramid=hgramid[:8])
+        return user, True
 
-    logger.debug("Found existing user with htelegram_id: {htelegram_id}...", htelegram_id=htelegram_id[:8])
-    integrations = await get_user_integrations(htelegram_id)
-    return user, False, integrations
+    return user, False
