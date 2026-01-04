@@ -5,6 +5,7 @@ from typing import Literal, cast
 import redis.asyncio as redis
 from loguru import logger
 
+from thatsoundapi.services.spotify.models import SpotifyTokens
 from thatsoundapi.settings import get_settings
 
 
@@ -60,6 +61,31 @@ class RedisClient:
         return bool(result > 0)
 
     @classmethod
+    async def save_spotify_oauth_state(cls, hgramid: str, state: str,  ttl: int) -> None:
+        client = cls._ensure_connected()
+        key = f"spotify:oauth:state:{state}"
+        await client.setex(key, ttl, hgramid)
+
+    @classmethod
+    async def get_spotify_oauth_state(cls, state: str) -> str | None:
+        client = cls._ensure_connected()
+        key = f"spotify:oauth:state:{state}"
+        result = await client.get(key)
+        return str(result) if result is not None else None
+
+    @classmethod
+    async def delete_spotify_oauth_state(cls, state: str) -> None:
+        client = cls._ensure_connected()
+        key = f"oauth:oauth:state:{state}"
+        await client.delete(key)
+
+    @classmethod
+    async def save_spotify_tokens(cls, hgramid: str, tokens: SpotifyTokens) -> None:
+        client = cls._ensure_connected()
+        key = f"spotify:tokens:{hgramid}"
+        await client.hset(name=key, mapping=tokens.model_dump())
+
+    @classmethod
     async def check_revoked_token(cls, jti: str, token_type: Literal["access", "refresh"] = "access") -> bool:
         client = cls._ensure_connected()
         key = f"jti:{token_type}:{jti}"
@@ -111,31 +137,7 @@ class RedisClient:
         result = await client.exists(key)
         return bool(result > 0)
 
-    @classmethod
-    async def save_spotify_tokens(
-        cls,
-        htelegram_id: str,
-        access_token: str,
-        refresh_token: str,
-        expires_in: int,
-        token_type: str = "Bearer",
-    ) -> None:
-        logger.info("Saving Spotify tokens", htelegram_id=htelegram_id[:8], expires_in=expires_in)
-        client = cls._ensure_connected()
 
-        key = f"spotify:tokens:{htelegram_id}"
-        expires_at = int(time.time()) + expires_in
-
-        await cast(Awaitable[int], client.hset(
-            key,
-            mapping={
-                "access_token": access_token,
-                "refresh_token": refresh_token,
-                "token_type": token_type,
-                "expires_at": str(expires_at),
-                "expires_in": str(expires_in),
-            }
-        ))
 
     @classmethod
     async def get_spotify_tokens(cls, htelegram_id: str) -> dict[str, str | int] | None:
@@ -199,22 +201,3 @@ class RedisClient:
 
         refresh_token = tokens.get("refresh_token")
         return bool(refresh_token and isinstance(refresh_token, str) and refresh_token)
-
-    @classmethod
-    async def save_oauth_state(cls, state: str, htelegram_id: str, ttl: int = 600) -> None:
-        client = cls._ensure_connected()
-        key = f"oauth:state:{state}"
-        await client.setex(key, ttl, htelegram_id)
-
-    @classmethod
-    async def get_oauth_state(cls, state: str) -> str | None:
-        client = cls._ensure_connected()
-        key = f"oauth:state:{state}"
-        result = await client.get(key)
-        return str(result) if result is not None else None
-
-    @classmethod
-    async def delete_oauth_state(cls, state: str) -> None:
-        client = cls._ensure_connected()
-        key = f"oauth:state:{state}"
-        await client.delete(key)

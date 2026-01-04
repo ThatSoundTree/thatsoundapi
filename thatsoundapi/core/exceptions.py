@@ -94,7 +94,19 @@ class HgramidNotFoundError(NotFoundError):
     message = "Hgramid not found"
 
 
-class InvalidOAuthStateError(BadRequestError):
+class InvalidSpotifyOAuthStateError(BadRequestError):
     """Invalid or expired OAuth state error (400)."""
 
-    message = "Invalid or expired OAuth state"
+    message = "Invalid or expired Spotify OAuth state"
+
+
+class SpotifyExchangeTokenError(BadRequestError):
+    """Spotify exchange token error (400)."""
+
+    message = "Failed to exchange spotify token"
+
+
+class SpotifyTokenError(BadRequestError):
+    """Spotify token error (400)."""
+
+    message = "Failed to make /me request. Do you have BETA access?"

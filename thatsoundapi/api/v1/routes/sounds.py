@@ -6,7 +6,7 @@ from thatsoundapi.core.exceptions import HgramidNotFoundError
 from thatsoundapi.core.responses import SuccessResponse, create_success_response
 from thatsoundapi.db.connection import Transaction
 from thatsoundapi.db.dependencies import get_transaction
-from thatsoundapi.services.spotify_service import SpotifyService
+from thatsoundapi.services.spotify.spotify_service import SpotifyService
 
 sounds_router = APIRouter(tags=["Sounds"])
 

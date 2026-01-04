@@ -1,6 +1,3 @@
-import secrets
-from urllib.parse import urlencode
-
 from fastapi import APIRouter, status
 from fastapi.responses import RedirectResponse
 from loguru import logger
@@ -8,30 +5,17 @@ from loguru import logger
 from thatsoundapi.api.v1.models.spotify import StatusResponse, TokenRefreshResponse
 from thatsoundapi.core.responses import SuccessResponse, create_success_response
 from thatsoundapi.repositories.spotify_repository import SpotifyRepository
-from thatsoundapi.services.spotify_service import SpotifyService
-from thatsoundapi.settings import get_settings
+from thatsoundapi.services.spotify.spotify_service import SpotifyService, initiate_login
 
 spotify_router = APIRouter(tags=["Spotify"])
 
 
-@spotify_router.get("")
-async def spotify_login(hgramid: str) -> RedirectResponse:
+@spotify_router.get("/login")
+async def spotify_init_login(hgramid: str) -> RedirectResponse:
     """Redirect user to Spotify login page."""
-    logger.info("[{hgramid}] [spotify] login initiated", hgramid=hgramid[:8])
-
-    settings = get_settings()
-    state = secrets.token_hex(16)
-    await SpotifyRepository.save_oauth_state(state, hgramid, ttl=settings.SPOTIFY_OAUTH_STATE_TTL)
-
-    params = {
-        "client_id": settings.SPOTIFY_CLIENT_ID,
-        "response_type": "code",
-        "redirect_uri": settings.SPOTIFY_REDIRECT_URI,
-        "scope": settings.SPOTIFY_SCOPES,
-        "state": state,
-    }
-
-    return RedirectResponse(f"{settings.SPOTIFY_AUTHORIZE_URL}?{urlencode(params)}")
+    logger.info("[{hgramid}] [spotify] init", hgramid=hgramid[:8])
+    redirect_url = await initiate_login(hgramid=hgramid)
+    return RedirectResponse(url=redirect_url)
 
 
 @spotify_router.post(

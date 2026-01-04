@@ -50,7 +50,7 @@ class SpotifyRepository:
 
     @staticmethod
     async def get_oauth_state(state: str) -> str | None:
-        return await RedisClient.get_oauth_state(state)
+        return await RedisClient.get_spotify_oauth_state(state)
 
     @staticmethod
     async def delete_oauth_state(state: str) -> None:

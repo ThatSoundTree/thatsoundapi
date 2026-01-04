@@ -1,70 +1,44 @@
-import base64
+import secrets
 import time
 from typing import List
+from urllib.parse import urlencode
 
 import httpx
 from fastapi import status
 from loguru import logger
 
-from thatsoundapi.core.exceptions import UnauthorizedError, NotFoundError, BadRequestError
+from thatsoundapi.core.exceptions import UnauthorizedError, NotFoundError
+from thatsoundapi.db.redis import RedisClient
 from thatsoundapi.repositories.spotify_repository import SpotifyRepository
-from thatsoundapi.settings import get_settings
+from thatsoundapi.services.spotify.oauth import exchange_code_for_tokens, check_and_save_tokens
+from thatsoundapi.settings import get_settings, get_spotify_settings
+
+
+async def initiate_login(hgramid: str) -> str:
+    state = secrets.token_hex(16)
+    spotify_settings = get_spotify_settings()
+
+    await RedisClient.save_spotify_oauth_state(hgramid=hgramid, state=state, ttl=spotify_settings.OAUTH_STATE_TTL)
+    params = {
+        "client_id": spotify_settings.CLIENT_ID,
+        "response_type": "code",
+        "redirect_uri": spotify_settings.REDIRECT_URI,
+        "scope": spotify_settings.SCOPES,
+        "state": state,
+    }
+
+    return f"{spotify_settings.AUTHORIZE_URL}?{urlencode(params)}"
+
+
+async def process_callback(hgramid: str, state: str, code: str):
+    await RedisClient.delete_spotify_oauth_state(state=state)
+    tokens = await exchange_code_for_tokens(hgramid=hgramid, code=code)
+    await check_and_save_tokens(hgramid=hgramid, tokens=tokens)
+
 
 
 class SpotifyService:
     """Service for interacting with Spotify Web API"""
-
-    @staticmethod
-    def _get_auth_header() -> str:
-        settings = get_settings()
-        credentials = f"{settings.SPOTIFY_CLIENT_ID}:{settings.SPOTIFY_CLIENT_SECRET.get_secret_value()}"
-        return base64.b64encode(credentials.encode()).decode()
-
-    @staticmethod
-    async def exchange_code_for_tokens(code: str, redirect_uri: str) -> dict:
-        settings = get_settings()
-        auth_header = SpotifyService._get_auth_header()
-
-        async with httpx.AsyncClient() as client:
-            response = await client.post(
-                settings.SPOTIFY_TOKEN_URL,
-                data={
-                    "grant_type": "authorization_code",
-                    "code": code,
-                    "redirect_uri": redirect_uri,
-                },
-                headers={
-                    "Authorization": f"Basic {auth_header}",
-                    "Content-Type": "application/x-www-form-urlencoded",
-                },
-            )
-
-        if response.status_code != 200:
-            error_text = response.text[:200]
-            logger.error(
-                "Failed to exchange code for tokens",
-                status_code=response.status_code,
-                error=error_text,
-            )
-            raise BadRequestError(
-                status.HTTP_400_BAD_REQUEST, "Failed to exchange code for tokens"
-            )
-
-        result: dict[str, str | int] = response.json()
-        return result
-
-    @staticmethod
-    async def handle_oauth_callback(code: str, redirect_uri: str, htelegram_id: str) -> None:
-        tokens = await SpotifyService.exchange_code_for_tokens(code, redirect_uri)
-
-        await SpotifyRepository.save_spotify_tokens(
-            htelegram_id=htelegram_id,
-            access_token=tokens["access_token"],
-            refresh_token=tokens["refresh_token"],
-            expires_in=tokens["expires_in"],
-            token_type=tokens.get("token_type", "Bearer"),
-        )
-
     @staticmethod
     async def get_valid_access_token(htelegram_id: str) -> str:
         tokens = await SpotifyRepository.get_spotify_tokens(htelegram_id)

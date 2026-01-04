@@ -6,7 +6,7 @@ from thatsoundapi.core.exceptions import (
     HgramidNotFoundError,
     ForbiddenError,
     InternalServerError,
-    InvalidOAuthStateError,
+    InvalidSpotifyOAuthStateError,
     NotFoundError,
     NotImplementedError,
     UnauthorizedError,
@@ -33,7 +33,7 @@ __all__ = [
     "BaseAPIException",
     "DatabaseError",
     "HgramidNotFoundError",
-    "InvalidOAuthStateError",
+    "InvalidSpotifyOAuthStateError",
     "get_error_code_from_status_code",
     # Responses
     "APIResponse",
