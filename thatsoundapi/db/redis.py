@@ -76,7 +76,7 @@ class RedisClient:
     @classmethod
     async def delete_spotify_oauth_state(cls, state: str) -> None:
         client = cls._ensure_connected()
-        key = f"oauth:oauth:state:{state}"
+        key = f"spotify:oauth:state:{state}"
         await client.delete(key)
 
     @classmethod
@@ -84,6 +84,15 @@ class RedisClient:
         client = cls._ensure_connected()
         key = f"spotify:tokens:{hgramid}"
         await client.hset(name=key, mapping=tokens.model_dump())
+
+    @classmethod
+    async def get_spotify_tokens(cls, hgramid: str) -> dict | None:
+        client = cls._ensure_connected()
+        key = f"spotify:tokens:{hgramid}"
+        tokens_dict = await client.hgetall(key)
+        return tokens_dict if tokens_dict is not None else None
+
+
 
     @classmethod
     async def check_revoked_token(cls, jti: str, token_type: Literal["access", "refresh"] = "access") -> bool:
@@ -139,47 +148,8 @@ class RedisClient:
 
 
 
-    @classmethod
-    async def get_spotify_tokens(cls, htelegram_id: str) -> dict[str, str | int] | None:
-        client = cls._ensure_connected()
-        key = f"spotify:tokens:{htelegram_id}"
 
-        tokens: dict[str, str] = await cast(Awaitable[dict[str, str]], client.hgetall(key))
-        if not tokens:
-            return None
 
-        result_dict: dict[str, str | int] = dict(tokens)
-        if "expires_at" in result_dict:
-            result_dict["expires_at"] = int(result_dict["expires_at"])
-        if "expires_in" in result_dict:
-            result_dict["expires_in"] = int(result_dict["expires_in"])
-
-        return result_dict
-
-    @classmethod
-    async def update_spotify_access_token(
-        cls,
-        htelegram_id: str,
-        access_token: str,
-        expires_in: int,
-    ) -> None:
-        try:
-            client = cls._ensure_connected()
-            key = f"spotify:tokens:{htelegram_id}"
-
-            expires_at = int(time.time()) + expires_in
-
-            await cast(Awaitable[int], client.hset(
-                key,
-                mapping={
-                    "access_token": access_token,
-                    "expires_at": str(expires_at),
-                    "expires_in": str(expires_in),
-                }
-            ))
-        except Exception as e:
-            logger.exception("Failed to update Spotify access token", htelegram_id=htelegram_id[:8], error=str(e))
-            raise
 
     @classmethod
     async def delete_spotify_tokens(cls, htelegram_id: str) -> None:

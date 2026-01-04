@@ -18,10 +18,19 @@ def get_error_code_from_status_code(status_code: int) -> str:
 class BaseAPIException(Exception):
     """Base exception for all API exceptions."""
 
-    def __init__(self, code: int, error: str) -> None:
+    def __init__(self, code: int | None = None, error: str | None = None) -> None:
         super().__init__()
-        self.status_code = code
-        self.detail = error
+        # If attributes already set by __new__, don't override
+        if hasattr(self, 'status_code') and hasattr(self, 'detail'):
+            return
+        
+        # Use provided arguments or fall back to class attributes
+        if code is not None and error is not None:
+            self.status_code = code
+            self.detail = error
+        elif hasattr(type(self), 'status_code') and hasattr(type(self), 'message'):
+            self.status_code = type(self).status_code
+            self.detail = type(self).message
 
     def __new__(cls, *args, **kwargs):
         # Allow using class without parentheses: raise SomeError
@@ -110,3 +119,15 @@ class SpotifyTokenError(BadRequestError):
     """Spotify token error (400)."""
 
     message = "Failed to make /me request. Do you have BETA access?"
+
+
+class NoSpotifyIntegrationError(UnauthorizedError):
+    """No Spotify integration error (401)."""
+
+    message = "Spotify integration doesn't exist"
+
+
+class RefreshSpotifyTokenError(UnauthorizedError):
+    """Refresh Spotify token error (401)."""
+
+    message = "Failed to refresh Spotify token"

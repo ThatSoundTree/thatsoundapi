@@ -7,10 +7,11 @@ import httpx
 from fastapi import status
 from loguru import logger
 
-from thatsoundapi.core.exceptions import UnauthorizedError, NotFoundError
+from thatsoundapi.core.exceptions import UnauthorizedError, NotFoundError, NoSpotifyIntegrationError
 from thatsoundapi.db.redis import RedisClient
 from thatsoundapi.repositories.spotify_repository import SpotifyRepository
-from thatsoundapi.services.spotify.oauth import exchange_code_for_tokens, check_and_save_tokens
+from thatsoundapi.services.spotify.models import SpotifyTokens
+from thatsoundapi.services.spotify.oauth import exchange_code_for_tokens, check_and_save_tokens, refresh_access_token
 from thatsoundapi.settings import get_settings, get_spotify_settings
 
 
@@ -34,6 +35,15 @@ async def process_callback(hgramid: str, state: str, code: str):
     await RedisClient.delete_spotify_oauth_state(state=state)
     tokens = await exchange_code_for_tokens(hgramid=hgramid, code=code)
     await check_and_save_tokens(hgramid=hgramid, tokens=tokens)
+
+
+async def process_refresh_tokens(hgramid: str):
+    tokens_dict = await RedisClient.get_spotify_tokens(hgramid=hgramid)
+    if not tokens_dict:
+        logger.warning("[{hgramid}] [spotify] empty tokens", hgramid=hgramid[:8])
+        raise NoSpotifyIntegrationError
+    old_tokens = SpotifyTokens.model_validate(tokens_dict)
+    await refresh_access_token(hgramid=hgramid, tokens=old_tokens)
 
 
 

@@ -1,6 +1,6 @@
 from loguru import logger
 
-from thatsoundapi.core.exceptions import SpotifyExchangeTokenError, SpotifyTokenError
+from thatsoundapi.core.exceptions import SpotifyExchangeTokenError, SpotifyTokenError, RefreshSpotifyTokenError
 from thatsoundapi.db.redis import RedisClient
 from thatsoundapi.services.spotify.models import SpotifyTokens
 from thatsoundapi.settings import get_spotify_settings
@@ -13,7 +13,7 @@ async def exchange_code_for_tokens(hgramid: str, code: str) -> SpotifyTokens:
     response = await HttpClient.post(
         url=spotify_settings.TOKEN_URL,
         headers=spotify_settings.get_header(),
-        data=spotify_settings.get_payload(code=code)
+        data=spotify_settings.get_exchange_payload(code=code)
     )
 
     if response.status_code != 200:
@@ -42,3 +42,25 @@ async def check_and_save_tokens(hgramid: str, tokens: SpotifyTokens) -> None:
     await check_token(hgramid=hgramid, access_token=tokens.access_token)
     await RedisClient.save_spotify_tokens(hgramid=hgramid[:8], tokens=tokens)
     logger.success("[{hgramid}] [spotify] saved tokens", hgramid=hgramid[:8])
+
+
+async def refresh_access_token(hgramid: str, tokens: SpotifyTokens) -> None:
+    spotify_settings = get_spotify_settings()
+
+    response = await HttpClient.post(
+        url=spotify_settings.TOKEN_URL,
+        headers=spotify_settings.get_header(),
+        data=spotify_settings.get_refresh_payload(refresh_token=tokens.refresh_token)
+    )
+
+    if response.status_code != 200:
+        logger.error("[{hgramid}] [spotify] refresh failed: {error_text}", hgramid=hgramid[:8], error_text=response.text)
+        raise RefreshSpotifyTokenError
+
+    tokens_dict = response.json()
+    if tokens_dict.get("refresh_token") is None:
+        logger.warning("[hgramid]] [spotify] refresh token still active", hgramid=hgramid[:8])
+        return
+
+    new_tokens = SpotifyTokens.model_validate(tokens_dict)
+    await check_and_save_tokens(hgramid=hgramid, tokens=new_tokens)

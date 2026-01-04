@@ -74,7 +74,7 @@ async def api_exception_handler(request: Request, exc: BaseAPIException) -> JSON
     return JSONResponse(
         status_code=exc.status_code,
         content=error_response.model_dump(exclude_none=True),
-        headers=exc.headers,
+        headers=getattr(exc, 'headers', None),
     )
 
 

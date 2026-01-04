@@ -117,11 +117,18 @@ class SpotifyIntegrationSettings(BaseSettings):
             "Content-Type": "application/x-www-form-urlencoded",
         }
 
-    def get_payload(self, code: str) -> dict:
+    def get_exchange_payload(self, code: str) -> dict:
         return {
             "grant_type": "authorization_code",
             "code": code,
             "redirect_uri": self.REDIRECT_URI,
+        }
+
+    @classmethod
+    def get_refresh_payload(self, refresh_token: str) -> dict:
+        return {
+            "grant_type": "refresh_token",
+            "refresh_token": refresh_token,
         }
 
 
