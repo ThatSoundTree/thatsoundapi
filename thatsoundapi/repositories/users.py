@@ -21,11 +21,10 @@ class UserRepository:
         return result.scalar_one_or_none()
 
     @staticmethod
-    async def create(hgramid: str) -> User:
+    async def create(hgramid: str) -> None:
         """Create a new user."""
         session = db_session.get()
         if session is None:
             raise UnknownDatabaseError
-        query = insert(User).values(hgramid=hgramid).returning(User)
-        user = await session.execute(query)
-        return user
+        query = insert(User).values(hgramid=hgramid)
+        await session.execute(query)

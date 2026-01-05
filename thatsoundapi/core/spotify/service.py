@@ -1,6 +1,7 @@
 import datetime
 import secrets
 import time
+from typing import Any
 from urllib.parse import urlencode
 
 from loguru import logger
@@ -46,7 +47,7 @@ async def process_refresh_tokens(hgramid: str):
     await refresh_access_token(hgramid=hgramid, tokens=old_tokens)
 
 
-async def get_recent_played_tracks(hgramid: str, limit: int = 15) -> dict:
+async def get_recent_played_tracks(hgramid: str, limit: int = 15) -> dict[str, Any]:
     spotify_settings = get_spotify_settings()
     tokens_dict = await RedisClient.get_spotify_tokens(hgramid=hgramid)
     if not tokens_dict:
@@ -65,7 +66,7 @@ async def get_recent_played_tracks(hgramid: str, limit: int = 15) -> dict:
         logger.error("[{hgramid}] [spotify] unknown api error: {error_text}", hgramid=hgramid[:8], error_text=response.text[:200])
         raise UnknownSpotifyAPIError
 
-    return response.json()
+    return response.json()  # type: ignore[no-any-return]
 
 
 async def get_current_playing_track(hgramid: str) -> dict | None:
@@ -144,12 +145,12 @@ def build_tracks_object(raw_tracks: list) -> list[SpotifyTrack]:
 
     return spotify_tracks
 
-def extract_album_cover(album: dict) -> str:
-    album_cover_url = None
-    album_images = album["images"]
+def extract_album_cover(album: dict[str, Any]) -> str | None:
+    album_cover_url: str | None = None
+    album_images = album.get("images", [])
     if album_images:
         medium_image = next((img for img in album_images if img.get("height") == 640), None)
-        album_cover_url = (medium_image or album_images[0] or {})["url"]
+        image = medium_image or album_images[0] or {}
+        album_cover_url = image.get("url") if image else None
 
     return album_cover_url
-

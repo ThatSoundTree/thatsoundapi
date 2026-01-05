@@ -24,12 +24,13 @@ class BaseAPIException(Exception):
             return
 
         # Use provided arguments or fall back to class attributes
+        cls = type(self)
         if code is not None and error is not None:
             self.status_code = code
             self.detail = error
-        elif hasattr(type(self), 'status_code') and hasattr(type(self), 'message'):
-            self.status_code = type(self).status_code
-            self.detail = type(self).message
+        elif hasattr(cls, 'status_code') and hasattr(cls, 'message'):
+            self.status_code = cls.status_code
+            self.detail = cls.message
 
     def __new__(cls, *args, **kwargs):
         # Allow using class without parentheses: raise SomeError

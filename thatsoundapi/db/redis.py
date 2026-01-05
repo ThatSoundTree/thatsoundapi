@@ -1,4 +1,5 @@
-from typing import Literal
+
+from typing import Any, Awaitable
 
 import redis.asyncio as redis
 from loguru import logger
@@ -81,11 +82,14 @@ class RedisClient:
     async def save_spotify_tokens(cls, hgramid: str, tokens: SpotifyTokens) -> None:
         client = cls._ensure_connected()
         key = f"spotify:tokens:{hgramid}"
-        await client.hset(name=key, mapping=tokens.model_dump())
+        result = client.hset(name=key, mapping=tokens.model_dump())
+        if isinstance(result, Awaitable):
+            await result
 
     @classmethod
-    async def get_spotify_tokens(cls, hgramid: str) -> dict | None:
+    async def get_spotify_tokens(cls, hgramid: str) -> dict[str, Any] | None:
         client = cls._ensure_connected()
         key = f"spotify:tokens:{hgramid}"
-        tokens_dict = await client.hgetall(key)
+        result = client.hgetall(key)
+        tokens_dict: dict[str, Any] | None = await result if isinstance(result, Awaitable) else result
         return tokens_dict if tokens_dict is not None else None

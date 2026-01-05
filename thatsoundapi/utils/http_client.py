@@ -1,4 +1,5 @@
 from enum import StrEnum
+from typing import Any
 
 import httpx
 from loguru import logger
@@ -12,7 +13,7 @@ class MethodEnum(StrEnum):
 class HttpClient:
 
     @staticmethod
-    async def __any_method(method: MethodEnum, url: str, **kwargs: dict) -> httpx.Response:
+    async def __any_method(method: MethodEnum, url: str, **kwargs: Any) -> httpx.Response:
         logger.debug("{method} {url}", method=method, url=url)
 
         async with httpx.AsyncClient() as client:
@@ -26,9 +27,9 @@ class HttpClient:
         return response
 
     @staticmethod
-    async def get(url: str, **kwargs: dict) -> httpx.Response:
+    async def get(url: str, **kwargs: Any) -> httpx.Response:
         return await HttpClient.__any_method(method=MethodEnum.GET, url=url, **kwargs)
 
     @staticmethod
-    async def post(url: str, **kwargs: dict) -> httpx.Response:
+    async def post(url: str, **kwargs: Any) -> httpx.Response:
         return await HttpClient.__any_method(method=MethodEnum.POST, url=url, **kwargs)

@@ -23,4 +23,3 @@ async def refresh_spotify_tokens(hgramid: str) -> None:
     """Manually refresh Spotify tokens."""
     logger.info("[{hgramid}] [spotify] refresh", hgramid=hgramid[:8])
     await process_refresh_tokens(hgramid=hgramid)
-
