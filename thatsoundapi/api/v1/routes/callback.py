@@ -4,7 +4,7 @@ from loguru import logger
 
 from thatsoundapi.core import InvalidSpotifyOAuthStateError
 from thatsoundapi.db.redis import RedisClient
-from thatsoundapi.services.spotify.spotify_service import process_callback
+from thatsoundapi.core.spotify.spotify_service import process_callback
 
 callback_router = APIRouter()
 

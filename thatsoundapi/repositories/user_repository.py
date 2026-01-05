@@ -1,6 +1,6 @@
-from sqlalchemy import select
+from sqlalchemy import select, insert
 
-from thatsoundapi.core.exceptions import DatabaseError
+from thatsoundapi.core.exceptions import DatabaseError, UnknownDatabaseError
 from thatsoundapi.db.connection import db_session
 from thatsoundapi.db.models import User
 
@@ -9,15 +9,14 @@ class UserRepository:
     """User database operations."""
 
     @staticmethod
-    async def get_by_htelegram_id(hgramid: str) -> User | None:
+    async def get_by_hgramid(hgramid: str) -> User | None:
         """Get user by hashed Telegram ID."""
         session = db_session.get()
         if session is None:
-            raise DatabaseError("Database session not found in context")
+            raise UnknownDatabaseError
 
-        result = await session.execute(
-            select(User).where(User.hgramid == hgramid),
-        )
+        query = select(User).where(User.hgramid == hgramid)
+        result = await session.execute(query)
         return result.scalar_one_or_none()
 
     @staticmethod
@@ -25,10 +24,7 @@ class UserRepository:
         """Create a new user."""
         session = db_session.get()
         if session is None:
-            raise DatabaseError("Database session not found in context")
-
-        user = User(hgramid=hgramid)
-        session.add(user)
-        await session.flush()
-        await session.refresh(user)
+            raise UnknownDatabaseError
+        query = insert(User).values(hgramid=hgramid).returning(User)
+        user = await session.execute(query)
         return user

@@ -1,7 +1,7 @@
 from loguru import logger
 
 from thatsoundapi.api.v1.models.spotify import SpotifyTrack
-from thatsoundapi.services.spotify.spotify_service import get_recent_played_tracks, get_current_playing_track, \
+from thatsoundapi.core.spotify.spotify_service import get_recent_played_tracks, get_current_playing_track, \
     build_tracks_object, play_order_sort
 
 

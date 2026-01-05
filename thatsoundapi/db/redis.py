@@ -3,7 +3,7 @@ from typing import Literal
 import redis.asyncio as redis
 from loguru import logger
 
-from thatsoundapi.services.spotify.models import SpotifyTokens
+from thatsoundapi.core.spotify.models import SpotifyTokens
 from thatsoundapi.settings import get_settings
 
 

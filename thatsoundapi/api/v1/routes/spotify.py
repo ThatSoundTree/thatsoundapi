@@ -2,7 +2,7 @@ from fastapi import APIRouter, status
 from fastapi.responses import RedirectResponse
 from loguru import logger
 
-from thatsoundapi.services.spotify.spotify_service import initiate_login, process_refresh_tokens
+from thatsoundapi.core.spotify.spotify_service import initiate_login, process_refresh_tokens
 
 spotify_router = APIRouter(tags=["Spotify"])
 
@@ -15,7 +15,7 @@ async def spotify_init_login(hgramid: str) -> RedirectResponse:
     return RedirectResponse(url=redirect_url)
 
 
-@spotify_router.post(
+@spotify_router.get(
     "/refresh",
     status_code=status.HTTP_200_OK,
 )

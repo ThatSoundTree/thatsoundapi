@@ -8,7 +8,7 @@ from loguru import logger
 from thatsoundapi.core.exceptions import SpotifyExchangeTokenError, SpotifyTokenError, RefreshSpotifyTokenError, \
     NoSpotifyIntegrationError
 from thatsoundapi.db.redis import RedisClient
-from thatsoundapi.services.spotify.models import SpotifyTokens
+from thatsoundapi.core.spotify.models import SpotifyTokens
 from thatsoundapi.settings import get_spotify_settings
 from thatsoundapi.utils.http_client import HttpClient
 
