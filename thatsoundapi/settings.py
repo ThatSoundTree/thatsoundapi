@@ -18,6 +18,7 @@ class Settings(BaseSettings):
     POSTGRES_PASSWORD: SecretStr
 
     # Security
+    AUTH_KEY: SecretStr
     TELEGRAM_HASH_KEY: SecretStr = Field(..., description="Secret key for hashing telegram_id to htelegram_id")
 
     # TSDirect API Configuration

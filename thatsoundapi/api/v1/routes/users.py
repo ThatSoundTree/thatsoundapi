@@ -8,8 +8,9 @@ from thatsoundapi.core.sounds import recent_played_tracks as recent_played_track
 from thatsoundapi.db.connection import Transaction
 from thatsoundapi.db.dependencies import get_transaction
 from thatsoundapi.core.spotify.oauth import keep_token_alive
+from thatsoundapi.utils.auth import verify_basic_auth
 
-user_router = APIRouter(tags=["Main"])
+user_router = APIRouter(tags=["Main"], dependencies=[Depends(verify_basic_auth)])
 
 
 @user_router.get(

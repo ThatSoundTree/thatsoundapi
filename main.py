@@ -32,7 +32,6 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-
 app.include_router(user_router, prefix="/api/v1", tags=["Main"])
 app.include_router(spotify_router, prefix="/api/v1/{hgramid}/integrations/spotify", tags=["Spotify"])
 app.include_router(callback_router, prefix="/api/v1/callback", tags=["Callback"])
