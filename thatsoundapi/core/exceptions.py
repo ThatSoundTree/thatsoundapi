@@ -131,3 +131,9 @@ class RefreshSpotifyTokenError(UnauthorizedError):
     """Refresh Spotify token error (401)."""
 
     message = "Failed to refresh Spotify token"
+
+
+class UnknownSpotifyAPIError(BadRequestError):
+    """Unknown spotify API error (400)."""
+
+    message = "Unknown Spotify API error. Please try again later"

@@ -12,6 +12,5 @@ class SpotifyTokens(BaseModel):
 
     @model_validator(mode="after")
     def set_expires_at(self) -> "SpotifyTokens":
-        if self.expires_at is None:
-            self.expires_at = int(time.time()) + self.expires_in
+        self.expires_at = int(time.time()) + self.expires_in
         return self

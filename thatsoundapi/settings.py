@@ -101,7 +101,7 @@ class SpotifyIntegrationSettings(BaseSettings):
     REDIRECT_URI: str
 
     OAUTH_STATE_TTL: int = Field(default=600, gt=0)
-    SCOPES: str = Field(default="user-read-recently-played streaming")
+    SCOPES: str = Field(default="user-read-currently-playing user-read-playback-state streaming")
     AUTHORIZE_URL: str = Field(default="https://accounts.spotify.com/authorize")
     TOKEN_URL: str = Field(default="https://accounts.spotify.com/api/token")
     API_BASE_URL: str = Field(default="https://api.spotify.com/v1")
@@ -126,11 +126,18 @@ class SpotifyIntegrationSettings(BaseSettings):
         }
 
     @classmethod
-    def get_refresh_payload(self, refresh_token: str) -> dict:
+    def get_refresh_payload(cls, refresh_token: str) -> dict:
         return {
             "grant_type": "refresh_token",
             "refresh_token": refresh_token,
         }
+
+    @classmethod
+    def get_api_call_header(cls, access_token: str) -> dict:
+        return {
+            "Authorization": f"Bearer {access_token}",
+        }
+
 
 
 @lru_cache

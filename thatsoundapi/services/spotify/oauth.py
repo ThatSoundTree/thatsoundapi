@@ -49,7 +49,7 @@ async def check_and_save_tokens(hgramid: str, tokens: SpotifyTokens) -> None:
     is_alive = await is_token_alive(hgramid=hgramid, access_token=tokens.access_token)
     if not is_alive:
         raise SpotifyTokenError
-    await RedisClient.save_spotify_tokens(hgramid=hgramid[:8], tokens=tokens)
+    await RedisClient.save_spotify_tokens(hgramid=hgramid, tokens=tokens)
     logger.success("[{hgramid}] [spotify] saved tokens", hgramid=hgramid[:8])
 
 
@@ -67,10 +67,6 @@ async def refresh_access_token(hgramid: str, tokens: SpotifyTokens) -> None:
         raise RefreshSpotifyTokenError
 
     tokens_dict = response.json()
-    if tokens_dict.get("refresh_token") is None:
-        logger.warning("[hgramid]] [spotify] refresh token still active", hgramid=hgramid[:8])
-        return
-
     new_tokens = SpotifyTokens.model_validate(tokens_dict)
     await check_and_save_tokens(hgramid=hgramid, tokens=new_tokens)
 
