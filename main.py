@@ -28,7 +28,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="That Sound API",
     description="That Sound REST API",
-    version="0.1.0",
+    version="0.1.1",
     lifespan=lifespan,
 )
 
@@ -92,4 +92,4 @@ async def health_check() -> dict[str, str]:
 @app.get("/")
 async def root() -> dict[str, str]:
     """Root endpoint"""
-    return {"message": "That Sound API", "version": "0.1.0"}
+    return {"message": "That Sound API", "version": "0.1.1"}
