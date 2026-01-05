@@ -1,20 +1,17 @@
 import datetime
 import secrets
 import time
-from typing import List
 from urllib.parse import urlencode
 
-import httpx
-from fastapi import status
 from loguru import logger
 
 from thatsoundapi.api.v1.models.spotify import SpotifyTrack
-from thatsoundapi.core.exceptions import UnauthorizedError, NotFoundError, NoSpotifyIntegrationError, \
+from thatsoundapi.core.exceptions import NoSpotifyIntegrationError, \
     UnknownSpotifyAPIError
 from thatsoundapi.db.redis import RedisClient
 from thatsoundapi.services.spotify.models import SpotifyTokens
 from thatsoundapi.services.spotify.oauth import exchange_code_for_tokens, check_and_save_tokens, refresh_access_token
-from thatsoundapi.settings import get_settings, get_spotify_settings
+from thatsoundapi.settings import get_spotify_settings
 from thatsoundapi.utils.http_client import HttpClient
 
 

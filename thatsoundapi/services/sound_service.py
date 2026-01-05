@@ -8,11 +8,11 @@ from thatsoundapi.services.spotify.spotify_service import get_recent_played_trac
 async def recent_played_tracks(hgramid: str) -> list[SpotifyTrack]:
     # Implement yandex_music and Last.FM. Now only Spotify
     tracks_dict = await get_recent_played_tracks(hgramid=hgramid)
-    # current_track = await get_current_playing_track(hgramid=hgramid) # TODO: current play track (missing permissions)
+    current_track = await get_current_playing_track(hgramid=hgramid)
     raw_tracks = play_order_sort(raw_tracks=tracks_dict.get("items", []))
 
-    # if current_track:
-    #     raw_tracks.insert(0, current_track)
+    if current_track:
+        raw_tracks.insert(0, current_track)
 
     try:
         tracks = build_tracks_object(raw_tracks=raw_tracks)

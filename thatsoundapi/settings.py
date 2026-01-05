@@ -101,7 +101,7 @@ class SpotifyIntegrationSettings(BaseSettings):
     REDIRECT_URI: str
 
     OAUTH_STATE_TTL: int = Field(default=600, gt=0)
-    SCOPES: str = Field(default="user-read-currently-playing user-read-playback-state streaming")
+    SCOPES: str = Field(default="user-read-currently-playing user-read-recently-played streaming")
     AUTHORIZE_URL: str = Field(default="https://accounts.spotify.com/authorize")
     TOKEN_URL: str = Field(default="https://accounts.spotify.com/api/token")
     API_BASE_URL: str = Field(default="https://api.spotify.com/v1")
