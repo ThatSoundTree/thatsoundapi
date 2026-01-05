@@ -1,3 +1,6 @@
+import inspect
+from functools import wraps
+
 from loguru import logger
 
 from thatsoundapi.core.exceptions import SpotifyExchangeTokenError, SpotifyTokenError, RefreshSpotifyTokenError
@@ -64,3 +67,25 @@ async def refresh_access_token(hgramid: str, tokens: SpotifyTokens) -> None:
 
     new_tokens = SpotifyTokens.model_validate(tokens_dict)
     await check_and_save_tokens(hgramid=hgramid, tokens=new_tokens)
+
+
+def ensure_valid_spotify_token(func: Callable) -> Callable:
+    """Something in the way."""
+
+    @wraps(func)
+    async def wrapper(*args: Any, **kwargs: Any) -> Any:
+        sig = inspect.signature(func)
+        bound_args = sig.bind(*args, **kwargs)
+        bound_args.apply_defaults()
+
+        hgramid = bound_args.arguments.get('hgramid')
+
+        if hgramid:
+            # TODO: Проверить валидность токена для hgramid
+            # TODO: Если токен истек или близок к истечению, обновить его
+            # TODO: Использовать SpotifyService.get_valid_access_token(hgramid)
+            pass
+
+        return await func(*args, **kwargs)
+
+    return wrapper

@@ -7,6 +7,7 @@ import httpx
 from fastapi import status
 from loguru import logger
 
+from thatsoundapi.api.v1.models.spotify import SpotifyTrack
 from thatsoundapi.core.exceptions import UnauthorizedError, NotFoundError, NoSpotifyIntegrationError
 from thatsoundapi.db.redis import RedisClient
 from thatsoundapi.repositories.spotify_repository import SpotifyRepository
@@ -44,6 +45,10 @@ async def process_refresh_tokens(hgramid: str):
         raise NoSpotifyIntegrationError
     old_tokens = SpotifyTokens.model_validate(tokens_dict)
     await refresh_access_token(hgramid=hgramid, tokens=old_tokens)
+
+
+async def get_recent_played_tracks(hgramid: str, limit: int = 5) -> List[SpotifyTrack]:
+    pass
 
 
 
