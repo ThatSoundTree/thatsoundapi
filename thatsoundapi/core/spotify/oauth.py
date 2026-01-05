@@ -5,8 +5,9 @@ from typing import Callable, Any
 
 from loguru import logger
 
-from thatsoundapi.core.exceptions import SpotifyExchangeTokenError, SpotifyTokenError, RefreshSpotifyTokenError, \
-    NoSpotifyIntegrationError
+from thatsoundapi.utils.exceptions.spotify import SpotifyExchangeTokenError, SpotifyTokenError, \
+    RefreshSpotifyTokenError, NoSpotifyIntegrationError
+
 from thatsoundapi.db.redis import RedisClient
 from thatsoundapi.core.spotify.models import SpotifyTokens
 from thatsoundapi.settings import get_spotify_settings

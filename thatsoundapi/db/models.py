@@ -7,13 +7,7 @@ from thatsoundapi.db.base import Base
 
 
 class User(Base):
-    """User database model.
-
-    Attributes:
-        htelegram_id: Hashed Telegram user ID (primary key)
-        created_at: Timestamp when the user was created
-        updated_at: Timestamp when the user was last updated
-    """
+    """User database model"""
 
     __tablename__ = "users"
 
@@ -39,4 +33,4 @@ class User(Base):
 
     def __repr__(self) -> str:
         """String representation of User."""
-        return f"<User(htelegram_id='{self.htelegram_id[:8]}...')>"
+        return f"<User(hgramid='{self.htelegram_id[:8]}...')>"

@@ -1,6 +1,7 @@
 from sqlalchemy import select, insert
 
-from thatsoundapi.core.exceptions import DatabaseError, UnknownDatabaseError
+from thatsoundapi.utils.exceptions.app import UnknownDatabaseError
+
 from thatsoundapi.db.connection import db_session
 from thatsoundapi.db.models import User
 

@@ -1,3 +1,4 @@
-from thatsoundapi.repositories.user_repository import UserRepository
+from thatsoundapi.repositories.users import UserRepository
+
 
 __all__ = ["UserRepository"]

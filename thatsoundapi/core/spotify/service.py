@@ -6,8 +6,8 @@ from urllib.parse import urlencode
 from loguru import logger
 
 from thatsoundapi.api.v1.models.spotify import SpotifyTrack
-from thatsoundapi.core.exceptions import NoSpotifyIntegrationError, \
-    UnknownSpotifyAPIError
+from thatsoundapi.utils.exceptions.spotify import NoSpotifyIntegrationError, UnknownSpotifyAPIError
+
 from thatsoundapi.db.redis import RedisClient
 from thatsoundapi.core.spotify.models import SpotifyTokens
 from thatsoundapi.core.spotify.oauth import exchange_code_for_tokens, check_and_save_tokens, refresh_access_token

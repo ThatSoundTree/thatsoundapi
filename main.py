@@ -7,20 +7,15 @@ from loguru import logger
 from thatsoundapi.api.v1.routes.callback import callback_router
 from thatsoundapi.api.v1.routes.spotify import spotify_router
 from thatsoundapi.api.v1.routes.users import user_router
-from thatsoundapi.core.exceptions import BaseAPIException, get_error_code_from_status_code
-from thatsoundapi.core.responses import ErrorDetail, ErrorResponse
+from thatsoundapi.utils.exceptions.base import BaseAPIException, get_error_code_from_status_code
+from thatsoundapi.utils.protocols import ErrorDetail, ErrorResponse
+
 from thatsoundapi.db.redis import RedisClient
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Application lifespan context manager.
-
-    Handles startup and shutdown events.
-
-    Args:
-        app: FastAPI application instance
-    """
+    """Application lifespan context manager"""
     # Startup
     logger.info("Starting application...")
     await RedisClient.connect()
@@ -37,22 +32,14 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# Register routers
+
 app.include_router(user_router, prefix="/api/v1", tags=["Main"])
 app.include_router(spotify_router, prefix="/api/v1/{hgramid}/integrations/spotify", tags=["Spotify"])
 app.include_router(callback_router, prefix="/api/v1/callback", tags=["Callback"])
 
 @app.exception_handler(BaseAPIException)
 async def api_exception_handler(request: Request, exc: BaseAPIException) -> JSONResponse:
-    """Handle custom API exceptions.
-
-    Args:
-        request: FastAPI request object
-        exc: Custom API exception
-
-    Returns:
-        JSONResponse with unified error format
-    """
+    """Handle custom API exceptions"""
     logger.error(
         "API exception: {} at {} [{}]",
         exc.detail,
@@ -76,15 +63,7 @@ async def api_exception_handler(request: Request, exc: BaseAPIException) -> JSON
 
 @app.exception_handler(Exception)
 async def general_exception_handler(request: Request, exc: Exception) -> JSONResponse:
-    """Handle unexpected exceptions.
-
-    Args:
-        request: FastAPI request object
-        exc: Exception instance
-
-    Returns:
-        JSONResponse with unified error format
-    """
+    """Handle unexpected exceptions"""
     logger.exception(
         "Unexpected error at {} [{}]",
         request.url.path,
@@ -106,19 +85,11 @@ async def general_exception_handler(request: Request, exc: Exception) -> JSONRes
 
 @app.get("/health")
 async def health_check() -> dict[str, str]:
-    """Health check endpoint.
-
-    Returns:
-        Health status
-    """
+    """Health check endpoint"""
     return {"status": "healthy"}
 
 
 @app.get("/")
 async def root() -> dict[str, str]:
-    """Root endpoint.
-
-    Returns:
-        API information
-    """
+    """Root endpoint"""
     return {"message": "That Sound API", "version": "0.1.0"}

@@ -1,8 +1,8 @@
 from fastapi import APIRouter, status
 from fastapi.responses import RedirectResponse
 from loguru import logger
+from thatsoundapi.core.spotify.service import initiate_login, process_refresh_tokens
 
-from thatsoundapi.core.spotify.spotify_service import initiate_login, process_refresh_tokens
 
 spotify_router = APIRouter(tags=["Spotify"])
 

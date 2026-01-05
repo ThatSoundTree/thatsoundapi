@@ -42,5 +42,5 @@ async def get_recent_tracks(
     logger.info("[{hgramid}] recent tracks", hgramid=hgramid[:8])
 
     tracks = await recent_played_tracks_spotify(hgramid=hgramid)
-    logger.success("[{hgramid}] [sound] fetch len(tracks)=={len_tracks}", hgramid=hgramid[:8], len_tracks=len(tracks))
+    logger.success("[{hgramid}] [sound] fetch len(tracks) == {len_tracks}", hgramid=hgramid[:8], len_tracks=len(tracks))
     return RecentTracksResponse(tracks=tracks)

@@ -20,10 +20,9 @@ class BaseAPIException(Exception):
 
     def __init__(self, code: int | None = None, error: str | None = None) -> None:
         super().__init__()
-        # If attributes already set by __new__, don't override
         if hasattr(self, 'status_code') and hasattr(self, 'detail'):
             return
-        
+
         # Use provided arguments or fall back to class attributes
         if code is not None and error is not None:
             self.status_code = code
@@ -56,13 +55,6 @@ class UnauthorizedError(BaseAPIException):
     message = "Unauthorized"
 
 
-class ForbiddenError(BaseAPIException):
-    """Forbidden error (403)."""
-
-    status_code = status.HTTP_403_FORBIDDEN
-    message = "Forbidden"
-
-
 class NotFoundError(BaseAPIException):
     """Not found error (404)."""
 
@@ -70,76 +62,8 @@ class NotFoundError(BaseAPIException):
     message = "Not Found"
 
 
-class ConflictError(BaseAPIException):
-    """Conflict error (409)."""
-
-    status_code = status.HTTP_409_CONFLICT
-    message = "Conflict"
-
-
 class InternalServerError(BaseAPIException):
     """Internal server error (500)."""
 
     status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
     message = "Internal server error"
-
-
-class NotImplementedError(BaseAPIException):
-    """Not implemented error (501)."""
-
-    status_code = status.HTTP_501_NOT_IMPLEMENTED
-    message = "Not implemented"
-
-
-class DatabaseError(InternalServerError):
-    """Database error (500)."""
-
-    message = "Database error"
-
-
-class HgramidNotFoundError(NotFoundError):
-    """ Telegram ID error (400)."""
-
-    message = "Hgramid not found"
-
-
-class InvalidSpotifyOAuthStateError(BadRequestError):
-    """Invalid or expired OAuth state error (400)."""
-
-    message = "Invalid or expired Spotify OAuth state"
-
-
-class SpotifyExchangeTokenError(BadRequestError):
-    """Spotify exchange token error (400)."""
-
-    message = "Failed to exchange spotify token"
-
-
-class SpotifyTokenError(BadRequestError):
-    """Spotify token error (400)."""
-
-    message = "Failed to make /me request. Do you have BETA access?"
-
-
-class NoSpotifyIntegrationError(UnauthorizedError):
-    """No Spotify integration error (401)."""
-
-    message = "Spotify integration doesn't exist"
-
-
-class RefreshSpotifyTokenError(UnauthorizedError):
-    """Refresh Spotify token error (401)."""
-
-    message = "Failed to refresh Spotify token"
-
-
-class UnknownSpotifyAPIError(BadRequestError):
-    """Unknown spotify API error (400)."""
-
-    message = "Unknown Spotify API error. Please try again later"
-
-
-class UnknownDatabaseError(InternalServerError):
-    """Unknown database error (500)."""
-
-    message = "Unknown database error. Please try again later"

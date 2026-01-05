@@ -2,9 +2,10 @@ from fastapi import APIRouter, Query, status
 from fastapi.responses import HTMLResponse
 from loguru import logger
 
-from thatsoundapi.core import InvalidSpotifyOAuthStateError
+from thatsoundapi.core.spotify.service import process_callback as process_callback_spotify
+from thatsoundapi.utils.exceptions.spotify import InvalidSpotifyOAuthStateError
+
 from thatsoundapi.db.redis import RedisClient
-from thatsoundapi.core.spotify.spotify_service import process_callback
 
 callback_router = APIRouter()
 
@@ -26,6 +27,6 @@ async def spotify_callback(
         raise InvalidSpotifyOAuthStateError
 
     logger.info("[{hgramid}] [spotify] callback", hgramid=hgramid[:8])
-    await process_callback(hgramid=hgramid, state=state, code=code)
+    await process_callback_spotify(hgramid=hgramid, state=state, code=code)
 
     return '<html><head><style>body { color: green; }</style></head><body><h1>Success! Return to <a href="https://t.me/thatsoundbot">@thatsoundbot</a></h1></body></html>'

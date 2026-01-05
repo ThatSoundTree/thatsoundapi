@@ -3,9 +3,10 @@ from typing import Any, cast
 from fastapi import status
 from loguru import logger
 
-from thatsoundapi.core.exceptions import BadRequestError, UnauthorizedError
+from thatsoundapi.utils.exceptions.base import BadRequestError, UnauthorizedError
+
 from thatsoundapi.settings import get_settings
-from thatsoundapi.utils.http_client import TSDirectHTTPClient
+from thatsoundapi.utils.http_client2 import TSDirectHTTPClient
 
 
 class TaskService:
