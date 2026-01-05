@@ -4,22 +4,11 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from thatsoundapi.db.base import container
 
-# Context variable for storing current database session
 db_session: ContextVar[AsyncSession | None] = ContextVar("db_session", default=None)
 
 
 class Transaction:
-    """Async context manager for database transactions.
-
-    Manages database session lifecycle with automatic commit/rollback
-    and context variable management for dependency injection.
-
-    Usage:
-        async with Transaction():
-            # Database operations here
-            session = db_session.get()
-            # Use session for queries
-    """
+    """Async context manager for database transactions"""
 
     def __init__(self) -> None:
         """Initialize transaction context manager."""

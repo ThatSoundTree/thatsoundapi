@@ -1,3 +1,4 @@
+import base64
 from functools import lru_cache
 from typing import Literal
 from urllib.parse import quote_plus
@@ -24,15 +25,8 @@ class Settings(BaseSettings):
     TSDIRECT_API_BASE_URL: str = Field(..., description="Base URL for TSDirect API")
 
     # Spotify API Configuration
-    SPOTIFY_CLIENT_ID: str
-    SPOTIFY_CLIENT_SECRET: SecretStr
-    SPOTIFY_REDIRECT_URI: str
     SPOTIFY_REFRESH_TOKEN_TTL: int = Field(default=5184000, gt=0)
-    SPOTIFY_API_BASE_URL: str = Field(default="https://api.spotify.com/v1")
-    SPOTIFY_TOKEN_URL: str = Field(default="https://accounts.spotify.com/api/token")
-    SPOTIFY_AUTHORIZE_URL: str = Field(default="https://accounts.spotify.com/authorize")
-    SPOTIFY_SCOPES: str = Field(default="user-read-recently-played streaming")
-    SPOTIFY_OAUTH_STATE_TTL: int = Field(default=600, gt=0)
+
     ACCESS_TOKEN_EXP: int = Field(default=3600, gt=0)
     REFRESH_TOKEN_EXP: int = Field(default=604800, gt=0)
 
@@ -98,7 +92,61 @@ class Settings(BaseSettings):
         return f"redis://{host}:{port}/{db}"
 
 
+class SpotifyIntegrationSettings(BaseSettings):
+    """Something in the way."""
+
+
+    CLIENT_ID: str
+    CLIENT_SECRET: SecretStr
+    REDIRECT_URI: str
+
+    OAUTH_STATE_TTL: int = Field(default=600, gt=0)
+    SCOPES: str = Field(default="user-read-currently-playing user-read-recently-played streaming")
+    AUTHORIZE_URL: str = Field(default="https://accounts.spotify.com/authorize")
+    TOKEN_URL: str = Field(default="https://accounts.spotify.com/api/token")
+    API_BASE_URL: str = Field(default="https://api.spotify.com/v1")
+    TOKEN_EXPIRE_LIMIT: int = Field(default=300, gt=0)
+
+    model_config = SettingsConfigDict(
+        env_file=".env", case_sensitive=False, extra="ignore", env_prefix="SPOTIFY_"
+    )
+
+    def get_header(self) -> dict:
+        credentials = f"{self.CLIENT_ID}:{self.CLIENT_SECRET.get_secret_value()}"
+        return {
+            "Authorization": f"Basic {base64.b64encode(credentials.encode()).decode()}",
+            "Content-Type": "application/x-www-form-urlencoded",
+        }
+
+    def get_exchange_payload(self, code: str) -> dict:
+        return {
+            "grant_type": "authorization_code",
+            "code": code,
+            "redirect_uri": self.REDIRECT_URI,
+        }
+
+    @classmethod
+    def get_refresh_payload(cls, refresh_token: str) -> dict:
+        return {
+            "grant_type": "refresh_token",
+            "refresh_token": refresh_token,
+        }
+
+    @classmethod
+    def get_api_call_header(cls, access_token: str) -> dict:
+        return {
+            "Authorization": f"Bearer {access_token}",
+        }
+
+
+
 @lru_cache
 def get_settings() -> Settings:
     """Cached settings function"""
     return Settings()  # type: ignore[call-arg]
+
+
+@lru_cache
+def get_spotify_settings() -> SpotifyIntegrationSettings:
+    """Cached spotify settings function"""
+    return SpotifyIntegrationSettings()  # type: ignore[call-arg]

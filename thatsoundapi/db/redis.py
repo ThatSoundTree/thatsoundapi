@@ -1,10 +1,10 @@
-import time
-from collections.abc import Awaitable
-from typing import Literal, cast
+
+from typing import Any, Awaitable
 
 import redis.asyncio as redis
 from loguru import logger
 
+from thatsoundapi.core.spotify.models import SpotifyTokens
 from thatsoundapi.settings import get_settings
 
 
@@ -53,161 +53,43 @@ class RedisClient:
         return cls._client
 
     @classmethod
-    async def check_revoked_token(cls, jti: str, token_type: Literal["access", "refresh"] = "access") -> bool:
+    async def has_spotify_integration(cls, hgramid: str) -> bool:
         client = cls._ensure_connected()
-        key = f"jti:{token_type}:{jti}"
+        key = f"spotify:tokens:{hgramid}"
         result = await client.exists(key)
         return bool(result > 0)
 
     @classmethod
-    async def revoke_token(
-        cls,
-        jti: str,
-        ttl: int | None = None,
-        token_type: Literal["access", "refresh"] = "access",
-    ) -> None:
+    async def save_spotify_oauth_state(cls, hgramid: str, state: str,  ttl: int) -> None:
         client = cls._ensure_connected()
-        settings = get_settings()
-
-        key = f"jti:{token_type}:{jti}"
-        ttl = ttl or settings.ACCESS_TOKEN_EXP
-
-        await client.setex(key, ttl, jti)
+        key = f"spotify:oauth:state:{state}"
+        await client.setex(key, ttl, hgramid)
 
     @classmethod
-    async def set(
-        cls,
-        key: str,
-        value: str,
-        ttl: int | None = None,
-    ) -> None:
+    async def get_spotify_oauth_state(cls, state: str) -> str | None:
         client = cls._ensure_connected()
-        if ttl is not None:
-            await client.setex(key, ttl, value)
-        else:
-            await client.set(key, value)
-
-    @classmethod
-    async def get(cls, key: str) -> str | None:
-        client = cls._ensure_connected()
+        key = f"spotify:oauth:state:{state}"
         result = await client.get(key)
         return str(result) if result is not None else None
 
     @classmethod
-    async def delete(cls, key: str) -> None:
+    async def delete_spotify_oauth_state(cls, state: str) -> None:
         client = cls._ensure_connected()
+        key = f"spotify:oauth:state:{state}"
         await client.delete(key)
 
     @classmethod
-    async def exists(cls, key: str) -> bool:
+    async def save_spotify_tokens(cls, hgramid: str, tokens: SpotifyTokens) -> None:
         client = cls._ensure_connected()
-        result = await client.exists(key)
-        return bool(result > 0)
+        key = f"spotify:tokens:{hgramid}"
+        result = client.hset(name=key, mapping=tokens.model_dump())
+        if isinstance(result, Awaitable):
+            await result
 
     @classmethod
-    async def save_spotify_tokens(
-        cls,
-        htelegram_id: str,
-        access_token: str,
-        refresh_token: str,
-        expires_in: int,
-        token_type: str = "Bearer",
-    ) -> None:
-        logger.info("Saving Spotify tokens", htelegram_id=htelegram_id[:8], expires_in=expires_in)
+    async def get_spotify_tokens(cls, hgramid: str) -> dict[str, Any] | None:
         client = cls._ensure_connected()
-
-        key = f"spotify:tokens:{htelegram_id}"
-        expires_at = int(time.time()) + expires_in
-
-        await cast(Awaitable[int], client.hset(
-            key,
-            mapping={
-                "access_token": access_token,
-                "refresh_token": refresh_token,
-                "token_type": token_type,
-                "expires_at": str(expires_at),
-                "expires_in": str(expires_in),
-            }
-        ))
-
-    @classmethod
-    async def get_spotify_tokens(cls, htelegram_id: str) -> dict[str, str | int] | None:
-        client = cls._ensure_connected()
-        key = f"spotify:tokens:{htelegram_id}"
-
-        tokens: dict[str, str] = await cast(Awaitable[dict[str, str]], client.hgetall(key))
-        if not tokens:
-            return None
-
-        result_dict: dict[str, str | int] = dict(tokens)
-        if "expires_at" in result_dict:
-            result_dict["expires_at"] = int(result_dict["expires_at"])
-        if "expires_in" in result_dict:
-            result_dict["expires_in"] = int(result_dict["expires_in"])
-
-        return result_dict
-
-    @classmethod
-    async def update_spotify_access_token(
-        cls,
-        htelegram_id: str,
-        access_token: str,
-        expires_in: int,
-    ) -> None:
-        try:
-            client = cls._ensure_connected()
-            key = f"spotify:tokens:{htelegram_id}"
-
-            expires_at = int(time.time()) + expires_in
-
-            await cast(Awaitable[int], client.hset(
-                key,
-                mapping={
-                    "access_token": access_token,
-                    "expires_at": str(expires_at),
-                    "expires_in": str(expires_in),
-                }
-            ))
-        except Exception as e:
-            logger.exception("Failed to update Spotify access token", htelegram_id=htelegram_id[:8], error=str(e))
-            raise
-
-    @classmethod
-    async def delete_spotify_tokens(cls, htelegram_id: str) -> None:
-        logger.info("Deleting Spotify tokens", htelegram_id=htelegram_id[:8])
-        try:
-            client = cls._ensure_connected()
-            key = f"spotify:tokens:{htelegram_id}"
-            await client.delete(key)
-            logger.success("Spotify tokens deleted", htelegram_id=htelegram_id[:8])
-        except Exception as e:
-            logger.exception("Failed to delete Spotify tokens", htelegram_id=htelegram_id[:8], error=str(e))
-            raise
-
-    @classmethod
-    async def has_valid_spotify_tokens(cls, htelegram_id: str) -> bool:
-        tokens = await cls.get_spotify_tokens(htelegram_id)
-        if not tokens:
-            return False
-
-        refresh_token = tokens.get("refresh_token")
-        return bool(refresh_token and isinstance(refresh_token, str) and refresh_token)
-
-    @classmethod
-    async def save_oauth_state(cls, state: str, htelegram_id: str, ttl: int = 600) -> None:
-        client = cls._ensure_connected()
-        key = f"oauth:state:{state}"
-        await client.setex(key, ttl, htelegram_id)
-
-    @classmethod
-    async def get_oauth_state(cls, state: str) -> str | None:
-        client = cls._ensure_connected()
-        key = f"oauth:state:{state}"
-        result = await client.get(key)
-        return str(result) if result is not None else None
-
-    @classmethod
-    async def delete_oauth_state(cls, state: str) -> None:
-        client = cls._ensure_connected()
-        key = f"oauth:state:{state}"
-        await client.delete(key)
+        key = f"spotify:tokens:{hgramid}"
+        result = client.hgetall(key)
+        tokens_dict: dict[str, Any] | None = await result if isinstance(result, Awaitable) else result
+        return tokens_dict if tokens_dict is not None else None

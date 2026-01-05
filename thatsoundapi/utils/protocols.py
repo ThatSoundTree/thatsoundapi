@@ -35,11 +35,3 @@ class ErrorResponse(APIResponse[None]):
     success: bool = Field(default=False, description="Always False for error responses")
     data: None = Field(default=None, description="Always None for error responses")
     error: ErrorDetail = Field(..., description="Error details")
-
-
-def create_success_response(
-    data: T,
-    message: str | None = None,
-) -> SuccessResponse[T]:
-    """Create a success response."""
-    return SuccessResponse(data=data, message=message)
