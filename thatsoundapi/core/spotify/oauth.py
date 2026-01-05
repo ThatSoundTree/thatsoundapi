@@ -29,7 +29,13 @@ async def exchange_code_for_tokens(hgramid: str, code: str) -> SpotifyTokens:
         raise SpotifyExchangeTokenError
 
     logger.info("[{hgramid}] [spotify] exchanged code", hgramid=hgramid[:8])
-    return SpotifyTokens.model_validate(response.json())
+    data = response.json()
+
+    tokens = SpotifyTokens.model_construct(
+        **data,
+        expires_at=int(time.time()) + data["expires_in"]
+    )
+    return tokens
 
 
 
@@ -54,21 +60,31 @@ async def check_and_save_tokens(hgramid: str, tokens: SpotifyTokens) -> None:
     logger.success("[{hgramid}] [spotify] saved tokens", hgramid=hgramid[:8])
 
 
-async def refresh_access_token(hgramid: str, tokens: SpotifyTokens) -> None:
+async def refresh_access_token(hgramid: str, old_tokens: SpotifyTokens) -> None:
     spotify_settings = get_spotify_settings()
 
     response = await HttpClient.post(
         url=spotify_settings.TOKEN_URL,
         headers=spotify_settings.get_header(),
-        data=spotify_settings.get_refresh_payload(refresh_token=tokens.refresh_token)
+        data=spotify_settings.get_refresh_payload(refresh_token=old_tokens.refresh_token)
     )
 
     if response.status_code != 200:
         logger.error("[{hgramid}] [spotify] refresh failed: {error_text}", hgramid=hgramid[:8], error_text=response.text)
         raise RefreshSpotifyTokenError
 
-    tokens_dict = response.json()
-    new_tokens = SpotifyTokens.model_validate(tokens_dict)
+    new_tokens_dict = response.json()
+    new_tokens_dict['refresh_token'] = old_tokens.refresh_token
+
+    if "refresh_token" in new_tokens_dict:
+        logger.success("[{hgramid}] [spotify] updated refresh token!", hgramid=hgramid[:8])
+        new_tokens_dict['refresh_token'] = new_tokens_dict.get("refresh_token")
+
+    new_tokens = SpotifyTokens.model_construct(
+        **new_tokens_dict,
+        expires_at=int(time.time()) + new_tokens_dict["expires_in"]
+    )
+
     await check_and_save_tokens(hgramid=hgramid, tokens=new_tokens)
 
 
@@ -88,15 +104,17 @@ def keep_token_alive(func: Callable) -> Callable:
             tokens_dict = await RedisClient.get_spotify_tokens(hgramid=hgramid)
             if not tokens_dict:
                 raise NoSpotifyIntegrationError
-
             tokens = SpotifyTokens.model_validate(tokens_dict)
 
             now = int(time.time())
             time_until_expiry = tokens.expires_at - now if tokens.expires_at else 0
 
             if time_until_expiry <= spotify_settings.TOKEN_EXPIRE_LIMIT:
-                await refresh_access_token(hgramid=hgramid, tokens=tokens)
-
+                await refresh_access_token(hgramid=hgramid, old_tokens=tokens)
+            #
+            # is_alive = await is_token_alive(hgramid=hgramid, access_token=tokens.access_token)
+            # if not is_alive:
+            #     await refresh_access_token(hgramid=hgramid, tokens=tokens)
         return await func(*args, **kwargs)
 
     return wrapper

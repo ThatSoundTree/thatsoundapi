@@ -44,7 +44,7 @@ async def process_refresh_tokens(hgramid: str):
         logger.warning("[{hgramid}] [spotify] empty tokens", hgramid=hgramid[:8])
         raise NoSpotifyIntegrationError
     old_tokens = SpotifyTokens.model_validate(tokens_dict)
-    await refresh_access_token(hgramid=hgramid, tokens=old_tokens)
+    await refresh_access_token(hgramid=hgramid, old_tokens=old_tokens)
 
 
 async def get_recent_played_tracks(hgramid: str, limit: int = 15) -> dict[str, Any]:
