@@ -1,9 +1,12 @@
 import inspect
+import time
 from functools import wraps
+from typing import Callable, Any
 
 from loguru import logger
 
-from thatsoundapi.core.exceptions import SpotifyExchangeTokenError, SpotifyTokenError, RefreshSpotifyTokenError
+from thatsoundapi.core.exceptions import SpotifyExchangeTokenError, SpotifyTokenError, RefreshSpotifyTokenError, \
+    NoSpotifyIntegrationError
 from thatsoundapi.db.redis import RedisClient
 from thatsoundapi.services.spotify.models import SpotifyTokens
 from thatsoundapi.settings import get_spotify_settings
@@ -29,7 +32,7 @@ async def exchange_code_for_tokens(hgramid: str, code: str) -> SpotifyTokens:
 
 
 
-async def check_token(hgramid: str, access_token: str) -> None:
+async def is_token_alive(hgramid: str, access_token: str) -> bool:
     spotify_settings = get_spotify_settings()
     response = await HttpClient.get(
         url=f"{spotify_settings.API_BASE_URL}/me",
@@ -38,11 +41,14 @@ async def check_token(hgramid: str, access_token: str) -> None:
 
     if response.status_code != 200:
         logger.error("[{hgramid}] [spotify] failed check: {error_text}", hgramid=hgramid[:8], error_text=response.text)
-        raise SpotifyTokenError
+        return False
+    return True
 
 
 async def check_and_save_tokens(hgramid: str, tokens: SpotifyTokens) -> None:
-    await check_token(hgramid=hgramid, access_token=tokens.access_token)
+    is_alive = await is_token_alive(hgramid=hgramid, access_token=tokens.access_token)
+    if not is_alive:
+        raise SpotifyTokenError
     await RedisClient.save_spotify_tokens(hgramid=hgramid[:8], tokens=tokens)
     logger.success("[{hgramid}] [spotify] saved tokens", hgramid=hgramid[:8])
 
@@ -69,11 +75,12 @@ async def refresh_access_token(hgramid: str, tokens: SpotifyTokens) -> None:
     await check_and_save_tokens(hgramid=hgramid, tokens=new_tokens)
 
 
-def ensure_valid_spotify_token(func: Callable) -> Callable:
+def keep_token_alive(func: Callable) -> Callable:
     """Something in the way."""
 
     @wraps(func)
     async def wrapper(*args: Any, **kwargs: Any) -> Any:
+        spotify_settings = get_spotify_settings()
         sig = inspect.signature(func)
         bound_args = sig.bind(*args, **kwargs)
         bound_args.apply_defaults()
@@ -81,10 +88,17 @@ def ensure_valid_spotify_token(func: Callable) -> Callable:
         hgramid = bound_args.arguments.get('hgramid')
 
         if hgramid:
-            # TODO: Проверить валидность токена для hgramid
-            # TODO: Если токен истек или близок к истечению, обновить его
-            # TODO: Использовать SpotifyService.get_valid_access_token(hgramid)
-            pass
+            tokens_dict = await RedisClient.get_spotify_tokens(hgramid=hgramid)
+            if not tokens_dict:
+                raise NoSpotifyIntegrationError
+
+            tokens = SpotifyTokens.model_validate(tokens_dict)
+
+            now = int(time.time())
+            time_until_expiry = tokens.expires_at - now if tokens.expires_at else 0
+
+            if time_until_expiry <= spotify_settings.TOKEN_EXPIRE_LIMIT:
+                await refresh_access_token(hgramid=hgramid, tokens=tokens)
 
         return await func(*args, **kwargs)
 

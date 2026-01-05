@@ -105,6 +105,7 @@ class SpotifyIntegrationSettings(BaseSettings):
     AUTHORIZE_URL: str = Field(default="https://accounts.spotify.com/authorize")
     TOKEN_URL: str = Field(default="https://accounts.spotify.com/api/token")
     API_BASE_URL: str = Field(default="https://api.spotify.com/v1")
+    TOKEN_EXPIRE_LIMIT: int = Field(default=300, gt=0)
 
     model_config = SettingsConfigDict(
         env_file=".env", case_sensitive=False, extra="ignore", env_prefix="SPOTIFY_"

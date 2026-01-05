@@ -5,6 +5,7 @@ from thatsoundapi.api.v1.models.users import UserIntegrationsResponse
 from thatsoundapi.db.connection import Transaction
 from thatsoundapi.db.dependencies import get_transaction
 from thatsoundapi.services.integrations_service import user_integrations_service
+from thatsoundapi.services.spotify.oauth import keep_token_alive
 
 user_router = APIRouter(tags=["Main"])
 
@@ -29,6 +30,7 @@ async def user_integrations(
     "/{hgramid}/recent",
     status_code=status.HTTP_200_OK,
 )
+@keep_token_alive
 async def get_recent_tracks(
     hgramid: str,
     _: Transaction = Depends(get_transaction),
