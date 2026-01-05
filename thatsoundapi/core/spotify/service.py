@@ -75,7 +75,6 @@ async def get_current_playing_track(hgramid: str) -> dict | None:
     if not tokens_dict:
         raise NoSpotifyIntegrationError
     tokens = SpotifyTokens.model_validate(tokens_dict)
-    print("tokens", tokens)
     response = await HttpClient.get(
         url=f"{spotify_settings.API_BASE_URL}/me/player/currently-playing",
         headers=spotify_settings.get_api_call_header(access_token=tokens.access_token),
