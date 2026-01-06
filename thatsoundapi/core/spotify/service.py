@@ -82,7 +82,7 @@ async def get_current_playing_track(hgramid: str) -> dict | None:
 
     if response.status_code != 200:
         logger.error("[{hgramid}] [spotify] unknown api error: {error_text}", hgramid=hgramid[:8], error_text=response.text[:200])
-        raise UnknownSpotifyAPIError
+        return None
 
     data = response.json()
     is_playing = data.get("is_playing")
