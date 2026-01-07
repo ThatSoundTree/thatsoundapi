@@ -152,8 +152,8 @@ class YandexIntegrationSettings(BaseSettings):
     def get_header(cls, access_token: str) -> dict:
         return {
             "Authorization": f"OAuth {access_token}",
-            'X-Yandex-Music-Client': 'YandexMusicAndroid/24023621',
-            "USER_AGENT": 'Yandex-Music-API'
+            # 'X-Yandex-Music-Client': 'YandexMusicAndroid/24023621',
+            # "USER_AGENT": 'Yandex-Music-API'
         }
 
 

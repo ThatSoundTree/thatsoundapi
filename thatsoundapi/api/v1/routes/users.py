@@ -5,6 +5,7 @@ from thatsoundapi.api.v1.models.spotify import RecentTracksResponse
 from thatsoundapi.api.v1.models.users import UserIntegrationsResponse
 from thatsoundapi.core.integrations import user_integrations_service
 from thatsoundapi.core.sounds import recent_played_tracks as recent_played_tracks_spotify
+from thatsoundapi.core.yandex.service import get_recent_played_tracks
 from thatsoundapi.db.connection import Transaction
 from thatsoundapi.db.dependencies import get_transaction
 from thatsoundapi.core.spotify.oauth import keep_token_alive
@@ -31,7 +32,6 @@ async def user_integrations(
 
 @user_router.get(
     "/{hgramid}/recent",
-    response_model=RecentTracksResponse,
     status_code=status.HTTP_200_OK,
 )
 @keep_token_alive
@@ -41,7 +41,8 @@ async def get_recent_tracks(
 ):
     """Get recently played tracks for a user (Spotify only)."""
     logger.info("[{hgramid}] recent tracks", hgramid=hgramid[:8])
-
-    tracks = await recent_played_tracks_spotify(hgramid=hgramid)
-    logger.success("[{hgramid}] [sound] fetch len(tracks) == {len_tracks}", hgramid=hgramid[:8], len_tracks=len(tracks))
-    return RecentTracksResponse(tracks=tracks)
+    result = await get_recent_played_tracks(hgramid=hgramid)
+    return result
+    # tracks = await recent_played_tracks_spotify(hgramid=hgramid)
+    # logger.success("[{hgramid}] [sound] fetch len(tracks) == {len_tracks}", hgramid=hgramid[:8], len_tracks=len(tracks))
+    # return RecentTracksResponse(tracks=tracks)
