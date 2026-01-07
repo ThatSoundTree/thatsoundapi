@@ -10,7 +10,7 @@ class SpotifyTrack(BaseModel):
     name: str = Field(..., description="Track name")
     artists: List[str] = Field(..., description="List of artist names")
     album_cover_url: Optional[str] = Field(default=None, description="Album cover image URL")
-    # external_urls: Optional[str] = Field(default=None, description="Spotify track URL")
+    url: Optional[str] = Field(default=None, description="Spotify track URL")
     played_at: Optional[str] = Field(default=None, description="ISO timestamp when track was played")
 
 

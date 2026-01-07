@@ -83,6 +83,8 @@ async def get_current_playing_track(hgramid: str) -> dict | None:
     if response.status_code != 200:
         logger.error("[{hgramid}] [spotify] unknown api error: {error_text}", hgramid=hgramid[:8], error_text=response.text[:200])
         return None
+    elif response.status_code == 204:
+        return None
 
     data = response.json()
     is_playing = data.get("is_playing")
@@ -138,7 +140,8 @@ def build_tracks_object(raw_tracks: list) -> list[SpotifyTrack]:
             name=track_data["name"],
             artists=artists,
             album_cover_url=album_cover_url,
-            played_at=item["played_at"]
+            played_at=item["played_at"],
+            url=item["track"].get("external_urls", {}).get("spotify")
         )
         spotify_tracks.append(spotify_track)
 
