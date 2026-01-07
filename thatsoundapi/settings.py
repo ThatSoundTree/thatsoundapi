@@ -140,6 +140,22 @@ class SpotifyIntegrationSettings(BaseSettings):
         }
 
 
+class YandexIntegrationSettings(BaseSettings):
+    """Something in the way."""
+    API_BASE_URL: str = Field(default="https://api.music.yandex.net")
+
+    model_config = SettingsConfigDict(
+        env_file=".env", case_sensitive=False, extra="ignore", env_prefix="YANDEX_"
+    )
+
+    @classmethod
+    def get_header(cls, access_token: str) -> dict:
+        return {
+            "Authorization": f"OAuth {access_token}",
+            'X-Yandex-Music-Client': 'YandexMusicAndroid/24023621',
+            "USER_AGENT": 'Yandex-Music-API'
+        }
+
 
 @lru_cache
 def get_settings() -> Settings:
@@ -151,3 +167,8 @@ def get_settings() -> Settings:
 def get_spotify_settings() -> SpotifyIntegrationSettings:
     """Cached spotify settings function"""
     return SpotifyIntegrationSettings()  # type: ignore[call-arg]
+
+@lru_cache
+def get_yandex_settings() -> YandexIntegrationSettings:
+    """Cached yandex settings function"""
+    return YandexIntegrationSettings()  # type: ignore[call-arg]

@@ -5,6 +5,7 @@ import redis.asyncio as redis
 from loguru import logger
 
 from thatsoundapi.core.spotify.models import SpotifyTokens
+from thatsoundapi.core.yandex.models import YandexToken
 from thatsoundapi.settings import get_settings
 
 
@@ -93,3 +94,25 @@ class RedisClient:
         result = client.hgetall(key)
         tokens_dict: dict[str, Any] | None = await result if isinstance(result, Awaitable) else result
         return tokens_dict if tokens_dict is not None else None
+
+    @classmethod
+    async def get_yandex_token(cls, hgramid: str) -> dict[str, Any] | None:
+        client = cls._ensure_connected()
+        key = f"yandex:token:{hgramid}"
+        result = await client.hgetall(key)
+        token_dict: dict[str, Any] | None = await result if isinstance(result, Awaitable) else result
+        return token_dict if token_dict is not None else None
+
+    @classmethod
+    async def save_yandex_token(cls, hgramid: str, token: YandexToken) -> dict[str, Any] | None:
+        client = cls._ensure_connected()
+        key = f"yandex:token:{hgramid}"
+        result = client.hset(name=key, mapping=token.model_dump())
+        if isinstance(result, Awaitable):
+            await result
+
+    @classmethod
+    async def delete_yandex_token(cls, hgramid: str) -> None:
+        client = cls._ensure_connected()
+        key = f"yandex:token:{hgramid}"
+        await client.delete(key)

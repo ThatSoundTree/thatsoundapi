@@ -1,8 +1,12 @@
-from fastapi import APIRouter, Query, status
+from fastapi import APIRouter, Query, status, Depends
 from fastapi.responses import HTMLResponse
 from loguru import logger
 
 from thatsoundapi.core.spotify.service import process_callback as process_callback_spotify
+from thatsoundapi.core.yandex.service import process_callback as process_callback_yandex
+from thatsoundapi.db import Transaction, get_transaction
+from thatsoundapi.repositories import UserRepository
+from thatsoundapi.utils.exceptions.app import UserNotFoundError
 from thatsoundapi.utils.exceptions.spotify import InvalidSpotifyOAuthStateError
 
 from thatsoundapi.db.redis import RedisClient
@@ -29,4 +33,25 @@ async def spotify_callback(
     logger.info("[{hgramid}] [spotify] callback", hgramid=hgramid[:8])
     await process_callback_spotify(hgramid=hgramid, state=state, code=code)
 
+    return '<html><head><style>body { color: green; }</style></head><body><h1>Success! Return to <a href="https://t.me/thatsoundbot">@thatsoundbot</a></h1></body></html>'
+
+
+@callback_router.get(
+    "/yandex",
+    status_code=status.HTTP_200_OK,
+    response_class=HTMLResponse,
+)
+async def yandex_callback(
+    hgramid: str = Query(..., description="Hashed telegram id"),
+    url: str = Query(..., description="Authorized yandex url"),
+    _: Transaction = Depends(get_transaction),
+):
+
+    user = await UserRepository.get_by_hgramid(hgramid=hgramid)
+    if not user:
+        logger.warning("[yandex] invalid hgramid=",hgramid=hgramid[:8])
+        raise UserNotFoundError
+
+    logger.info("[{hgramid}] [yandex] callback", hgramid=hgramid[:8])
+    await process_callback_yandex(hgramid=hgramid, query_url=url)
     return '<html><head><style>body { color: green; }</style></head><body><h1>Success! Return to <a href="https://t.me/thatsoundbot">@thatsoundbot</a></h1></body></html>'
