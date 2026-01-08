@@ -5,4 +5,4 @@ class UserIntegrationsResponse(BaseModel):
     """User integrations status."""
 
     spotify: bool = Field(default=False, description="Spotify integration status")
-    yandex_music: bool = Field(default=False, description="Yandex Music integration status")
+    YandexMusic: bool = Field(default=False, description="Yandex Music integration status")

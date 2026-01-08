@@ -18,6 +18,6 @@ async def user_integrations_service(hgramid: str) -> UserIntegrationsResponse:
     spotify_integration = await RedisClient.has_spotify_integration(hgramid=hgramid)
     yandex_music_integrations = await RedisClient.has_yandex_music_integration(hgramid=hgramid)
     user_integrations.spotify = spotify_integration
-    user_integrations.yandex_music = yandex_music_integrations
+    user_integrations.YandexMusic = yandex_music_integrations
 
     return user_integrations
