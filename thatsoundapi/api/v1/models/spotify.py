@@ -11,10 +11,3 @@ class SpotifyTrack(BaseModel):
     artists: List[str] = Field(..., description="List of artist names")
     album_cover_url: Optional[str] = Field(default=None, description="Album cover image URL")
     url: Optional[str] = Field(default=None, description="Spotify track URL")
-    played_at: Optional[str] = Field(default=None, description="ISO timestamp when track was played")
-
-
-class RecentTracksResponse(BaseModel):
-    """Response model for recently played tracks."""
-
-    tracks: List[SpotifyTrack] = Field(..., description="List of recently played tracks")

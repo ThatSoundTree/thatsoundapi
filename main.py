@@ -1,9 +1,10 @@
+import os
+import sys
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from loguru import logger
-
 from thatsoundapi.api.v1.routes.callback import callback_router
 from thatsoundapi.api.v1.routes.spotify import spotify_router
 from thatsoundapi.api.v1.routes.users import user_router
@@ -11,6 +12,11 @@ from thatsoundapi.utils.exceptions.base import BaseAPIException, get_error_code_
 from thatsoundapi.utils.protocols import ErrorDetail, ErrorResponse
 
 from thatsoundapi.db.redis import RedisClient
+
+
+log_level = os.getenv("BACKEND_LOG_LEVEL", "INFO")
+logger.remove()
+logger.add(sys.stderr, level=log_level)
 
 
 @asynccontextmanager
