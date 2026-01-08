@@ -61,6 +61,13 @@ class RedisClient:
         return bool(result > 0)
 
     @classmethod
+    async def has_yandex_music_integration(cls, hgramid: str) -> bool:
+        client = cls._ensure_connected()
+        key = f"yandex:token:{hgramid}"
+        result = await client.exists(key)
+        return bool(result > 0)
+
+    @classmethod
     async def save_spotify_oauth_state(cls, hgramid: str, state: str,  ttl: int) -> None:
         client = cls._ensure_connected()
         key = f"spotify:oauth:state:{state}"
