@@ -3,7 +3,7 @@ from loguru import logger
 
 from thatsoundapi.api.v1.models.users import UserIntegrationsResponse
 from thatsoundapi.core.integrations import user_integrations_service
-from thatsoundapi.core.yandex.service import recent_played_tracks as recent_played_tracks_yandex
+from thatsoundapi.core.yandex.service import current_playing_track
 from thatsoundapi.db.connection import Transaction
 from thatsoundapi.db.dependencies import get_transaction
 from thatsoundapi.utils.auth import verify_basic_auth
@@ -38,8 +38,9 @@ async def get_recent_tracks(
 ):
     """Get recently played tracks for a user (Spotify only)."""
     logger.info("[{hgramid}] recent tracks", hgramid=hgramid[:8])
-    result = await recent_played_tracks_yandex(hgramid=hgramid)
-    return result
+    # result = await recent_played_tracks_yandex(hgramid=hgramid)
+    # return result
+    return await current_playing_track(hgramid=hgramid)
     # tracks = await recent_played_tracks_spotify(hgramid=hgramid)
     # logger.success("[{hgramid}] [sound] fetch len(tracks) == {len_tracks}", hgramid=hgramid[:8], len_tracks=len(tracks))
     # return RecentTracksResponse(tracks=tracks)

@@ -1,6 +1,5 @@
-def normalize_track(item: dict) -> dict | None:
-    if item.get("type") != "track":
+def normalize_track_model(data: dict) -> dict | None:
+    if not data:
         return None
 
-    data = item.get("data") or {}
     return data.get("fullModel") or data

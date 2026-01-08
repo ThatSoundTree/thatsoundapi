@@ -1,6 +1,6 @@
 from thatsoundapi.api.v1.models.yandex_music import YandexMusicTrack
-from .normalizer import normalize_track
-from .mapper import map_track
+from thatsoundapi.core.yandex.normalizer import normalize_track_model
+from thatsoundapi.core.yandex.mapper import map_track
 
 
 def extract_tracks(
@@ -10,12 +10,20 @@ def extract_tracks(
     tracks: list[YandexMusicTrack] = []
 
     for item in items:
-        for raw_track in item.get("tracks", []):
-            if model := normalize_track(raw_track):
-                if track := map_track(model):
-                    tracks.append(track)
+        for track_item in item.get("tracks", []):
+            if track_item.get("type") != "track":
+                continue
 
-                    if len(tracks) == limit:
-                        return tracks
+            data = track_item.get("data") or {}
+            model = normalize_track_model(data)
+
+            if not model:
+                continue
+
+            if track := map_track(model):
+                tracks.append(track)
+
+                if len(tracks) == limit:
+                    return tracks
 
     return tracks
