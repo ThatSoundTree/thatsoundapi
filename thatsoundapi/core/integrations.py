@@ -6,8 +6,6 @@ from thatsoundapi.repositories import UserRepository
 
 async def user_integrations_service(hgramid: str) -> UserIntegrationsResponse:
     user_integrations = UserIntegrationsResponse()
-
-    # Check if user exists
     user = await UserRepository.get_by_hgramid(hgramid)
 
     if not user:

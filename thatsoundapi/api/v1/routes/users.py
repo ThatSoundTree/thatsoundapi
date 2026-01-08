@@ -42,7 +42,8 @@ async def get_recent_tracks(
     """Get recently played tracks for a user (Spotify only)."""
     logger.info("[{hgramid}] recent tracks", hgramid=hgramid[:8])
 
-    tracks_response = await recent_played_tracks(hgramid=hgramid)
+    integrations = await user_integrations_service(hgramid=hgramid)
+    tracks_response = await recent_played_tracks(hgramid=hgramid, integrations=integrations)
     logger.success(
         "[{hgramid}] [sound] fetch yandex_music={len_yandex} and spotify={len_spotify}",
         hgramid=hgramid[:8],

@@ -2,6 +2,7 @@ from loguru import logger
 
 from thatsoundapi.api.v1.models.sounds import RecentTracksResponse, IntegrationsTracks
 from thatsoundapi.api.v1.models.spotify import SpotifyTrack
+from thatsoundapi.api.v1.models.users import UserIntegrationsResponse
 from thatsoundapi.api.v1.models.yandex_music import YandexMusicTrack
 from thatsoundapi.core.spotify.service import get_recent_played_tracks as get_recent_played_tracks_spotify, get_current_playing_track as get_current_playing_track_spotify, play_order_sort as play_order_sort_spotify, build_tracks_object as build_tracks_object_spotify
 from thatsoundapi.core.yandex.service import get_recent_played_tracks as get_recent_played_tracks_yandex, get_current_playing_track as get_current_playing_track_yandex
@@ -36,9 +37,13 @@ async def prepare_yandex(hgramid: str) -> list[YandexMusicTrack]:
     return tracks
 
 
-async def recent_played_tracks(hgramid: str) -> RecentTracksResponse:
+async def recent_played_tracks(hgramid: str, integrations: UserIntegrationsResponse) -> RecentTracksResponse:
     # Implement Last.FM. Now only Spotify and Yandex.Music
-    spotify_tracks = await prepare_spotify(hgramid=hgramid)
-    yandex_tracks = await prepare_yandex(hgramid=hgramid)
+    spotify_tracks, yandex_tracks = [], []
+    if integrations.spotify:
+        spotify_tracks = await prepare_spotify(hgramid=hgramid)
+    if integrations.YandexMusic:
+        yandex_tracks = await prepare_yandex(hgramid=hgramid)
+
     result = IntegrationsTracks.model_construct(spotify=spotify_tracks,yandex_music=yandex_tracks)
     return RecentTracksResponse.model_construct(tracks=result)

@@ -5,6 +5,7 @@ from typing import Callable, Any
 
 from loguru import logger
 
+from thatsoundapi.core.integrations import user_integrations_service
 from thatsoundapi.utils.exceptions.spotify import SpotifyExchangeTokenError, SpotifyTokenError, \
     RefreshSpotifyTokenError, NoSpotifyIntegrationError
 
@@ -101,6 +102,11 @@ def keep_token_alive(func: Callable) -> Callable:
         hgramid = bound_args.arguments.get('hgramid')
 
         if hgramid:
+
+            integrations = await user_integrations_service(hgramid=hgramid)
+            if not integrations.spotify:
+                return await func(*args, **kwargs)
+
             tokens_dict = await RedisClient.get_spotify_tokens(hgramid=hgramid)
             if not tokens_dict:
                 raise NoSpotifyIntegrationError
