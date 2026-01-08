@@ -55,7 +55,7 @@ async def process_callback(
     )
 
 
-async def recent_played_tracks(
+async def get_recent_played_tracks(
     hgramid: str,
     limit: int = 5,
 ) -> list[YandexMusicTrack]:
@@ -80,7 +80,7 @@ async def recent_played_tracks(
     return extract_tracks(items, limit)
 
 
-async def current_playing_track(
+async def get_current_playing_track(
     hgramid: str,
 ) -> YandexMusicTrack:
     token = YandexToken.model_validate(

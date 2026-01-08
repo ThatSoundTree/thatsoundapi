@@ -1,3 +1,8 @@
+"""
+Author: https://github.com/MIPOHBOPOHIH/YMMBFA/blob/main/main.py#L115-L16
+Реально БОЛЬШОЕ СПАСИБО этому бро. У тебя MIT, я типа тебя упомянул, надеюсь не обидешься, @MIPOHBOPOHIH
+Звёздочку ему поставьте на репо!
+"""
 import json
 import random
 import string
