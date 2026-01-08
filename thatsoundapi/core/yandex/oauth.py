@@ -19,7 +19,8 @@ async def get_user_id(hgramid:str, access_token: str) -> str | None:
         return None
 
     resp = response.json()
-    return resp.get("result", {}).get("account", {}).get("uid", None)
+    uid = resp.get("result", {}).get("account", {}).get("uid", None)
+    return str(uid) if uid is not None else None
 
 
 async def check_and_save_token(hgramid: str, token: YandexToken) -> None:

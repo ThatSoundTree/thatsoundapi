@@ -99,12 +99,12 @@ class RedisClient:
     async def get_yandex_token(cls, hgramid: str) -> dict[str, Any] | None:
         client = cls._ensure_connected()
         key = f"yandex:token:{hgramid}"
-        result = await client.hgetall(key)
+        result = client.hgetall(key)
         token_dict: dict[str, Any] | None = await result if isinstance(result, Awaitable) else result
         return token_dict if token_dict is not None else None
 
     @classmethod
-    async def save_yandex_token(cls, hgramid: str, token: YandexToken) -> dict[str, Any] | None:
+    async def save_yandex_token(cls, hgramid: str, token: YandexToken) -> None:
         client = cls._ensure_connected()
         key = f"yandex:token:{hgramid}"
         result = client.hset(name=key, mapping=token.model_dump())

@@ -82,10 +82,10 @@ async def get_recent_played_tracks(
 
 async def get_current_playing_track(
     hgramid: str,
-) -> YandexMusicTrack:
+) -> YandexMusicTrack | None:
     token = YandexToken.model_validate(
         await RedisClient.get_yandex_token(hgramid=hgramid)
     )
 
     track = await get_current_track(token.access_token)
-    return track if track else None
+    return track

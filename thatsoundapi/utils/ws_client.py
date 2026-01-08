@@ -1,6 +1,6 @@
 import json
 import websocket
-from typing import Iterable
+from typing import Any, Iterable
 
 
 class WsClient:
@@ -19,8 +19,9 @@ class WsClient:
         ws.send(json.dumps(payload))
 
     @staticmethod
-    def recv_json(ws: websocket.WebSocket) -> dict:
-        return json.loads(ws.recv())
+    def recv_json(ws: websocket.WebSocket) -> dict[str, Any]:
+        result: dict[str, Any] = json.loads(ws.recv())
+        return result
 
     @staticmethod
     def close(ws: websocket.WebSocket) -> None:
