@@ -8,6 +8,7 @@ from loguru import logger
 class MethodEnum(StrEnum):
     GET = "GET"
     POST = "POST"
+    PUT = "PUT"
 
 
 class HttpClient:
@@ -16,11 +17,13 @@ class HttpClient:
     async def __any_method(method: MethodEnum, url: str, **kwargs: Any) -> httpx.Response:
         logger.debug("{method} {url}", method=method, url=url)
 
-        async with httpx.AsyncClient() as client:
+        async with httpx.AsyncClient() as client:  # TODO: missing switch
             if method == MethodEnum.GET:
                 response = await client.get(url, **kwargs)
             elif method == MethodEnum.POST:
                 response = await client.post(url, **kwargs)
+            elif method == MethodEnum.PUT:
+                response = await client.put(url, **kwargs)
             else:
                 raise NotImplementedError
 
@@ -33,3 +36,7 @@ class HttpClient:
     @staticmethod
     async def post(url: str, **kwargs: Any) -> httpx.Response:
         return await HttpClient.__any_method(method=MethodEnum.POST, url=url, **kwargs)
+
+    @staticmethod
+    async def put(url: str, **kwargs: Any) -> httpx.Response:
+        return await HttpClient.__any_method(method=MethodEnum.PUT, url=url, **kwargs)

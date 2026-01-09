@@ -7,17 +7,15 @@ from thatsoundapi.api.v1.models.yandex_music import YandexMusicTrack
 from thatsoundapi.core.spotify.service import get_recent_played_tracks as get_recent_played_tracks_spotify, get_current_playing_track as get_current_playing_track_spotify, play_order_sort as play_order_sort_spotify, build_tracks_object as build_tracks_object_spotify
 from thatsoundapi.core.yandex.service import get_recent_played_tracks as get_recent_played_tracks_yandex, get_current_playing_track as get_current_playing_track_yandex
 
+
 async def prepare_spotify(hgramid: str) -> list[SpotifyTrack]:
     tracks_dict = await get_recent_played_tracks_spotify(hgramid=hgramid)
     current_track = await get_current_playing_track_spotify(hgramid=hgramid)
     raw_tracks = play_order_sort_spotify(raw_tracks=tracks_dict.get("items", []))
 
     if current_track:
-        current_track_id = current_track.get("track", {}).get("id")
-        raw_tracks = [t for t in raw_tracks if t.get("track", {}).get("id") != current_track_id]
         raw_tracks.insert(0, current_track)
-        if raw_tracks:
-            raw_tracks.pop()
+        raw_tracks.pop()
 
     try:
         tracks = build_tracks_object_spotify(raw_tracks=raw_tracks)
@@ -34,10 +32,8 @@ async def prepare_yandex(hgramid: str) -> list[YandexMusicTrack]:
     current_track = await get_current_playing_track_yandex(hgramid=hgramid)
 
     if current_track:
-        tracks = [t for t in tracks if t.id != current_track.id]
         tracks.insert(0, current_track)
-        if tracks:
-            tracks.pop()
+        tracks.pop()
 
     return tracks
 

@@ -155,6 +155,17 @@ class YandexIntegrationSettings(BaseSettings):
         }
 
 
+class TSRipperSettings(BaseSettings):
+    """Something in the way."""
+
+    BASE_URL: str
+
+    model_config = SettingsConfigDict(
+        env_file=".env", case_sensitive=False, extra="ignore", env_prefix="TSRIPPER_"
+    )
+
+
+
 @lru_cache
 def get_settings() -> Settings:
     """Cached settings function"""
@@ -170,3 +181,8 @@ def get_spotify_settings() -> SpotifyIntegrationSettings:
 def get_yandex_settings() -> YandexIntegrationSettings:
     """Cached yandex settings function"""
     return YandexIntegrationSettings()  # type: ignore[call-arg]
+
+@lru_cache
+def get_tsripper_settings() -> TSRipperSettings:
+    """Cached tsripper settings function"""
+    return TSRipperSettings()  # type: ignore[call-arg]

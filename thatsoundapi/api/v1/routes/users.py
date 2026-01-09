@@ -1,9 +1,10 @@
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, status, Query
 from loguru import logger
 
 from thatsoundapi.api.v1.models.sounds import RecentTracksResponse
 from thatsoundapi.api.v1.models.users import UserIntegrationsResponse
 from thatsoundapi.core.integrations import user_integrations_service
+from thatsoundapi.core.scrobbles import process_scrobble_track
 from thatsoundapi.core.sounds import recent_played_tracks
 from thatsoundapi.core.spotify.oauth import keep_token_alive as keep_token_alive_spotify
 from thatsoundapi.db.connection import Transaction
@@ -51,3 +52,24 @@ async def get_recent_tracks(
         len_spotify=len(tracks_response.tracks.spotify)
     )
     return tracks_response
+
+
+@user_router.get(
+    "/{hgramid}/scrobble",
+    status_code=status.HTTP_200_OK
+)
+async def scrobble_track(
+    hgramid: str,
+    track_id: str = Query(..., description="Track ID"),
+    track_provider: int = Query(..., description="Track provider ID (i.e spotify=1)"),
+    _: Transaction = Depends(get_transaction),
+):
+    logger.info(
+        "[{hgramid}] scrobbling {track_id} from {provider_id}",
+        hgramid=hgramid[:8],
+        track_id=track_id[:8],
+        provider_id=track_provider
+    )
+
+    scrobble = await process_scrobble_track(hgramid=hgramid, provider_id=track_provider, external_track_id=track_id)
+    return scrobble
