@@ -8,6 +8,7 @@ def extract_tracks(
     limit: int,
 ) -> list[YandexMusicTrack]:
     tracks: list[YandexMusicTrack] = []
+    seen_track_ids: set[str] = set()
 
     for item in items:
         for track_item in item.get("tracks", []):
@@ -21,9 +22,10 @@ def extract_tracks(
                 continue
 
             if track := map_track(model):
-                tracks.append(track)
+                if track.id not in seen_track_ids:
+                    tracks.append(track)
 
-                if len(tracks) == limit:
-                    return tracks
+                    if len(tracks) == limit:
+                        return tracks
 
     return tracks

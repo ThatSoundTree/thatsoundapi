@@ -57,7 +57,7 @@ async def process_callback(
 
 async def get_recent_played_tracks(
     hgramid: str,
-    limit: int = 5,
+    limit: int = 15,
 ) -> list[YandexMusicTrack]:
     settings = get_yandex_settings()
 
@@ -77,7 +77,7 @@ async def get_recent_played_tracks(
         for item in tab.get("items", [])
     ]
 
-    return extract_tracks(items, limit)
+    return extract_tracks(items, 5)
 
 
 async def get_current_playing_track(

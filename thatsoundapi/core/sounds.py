@@ -13,8 +13,11 @@ async def prepare_spotify(hgramid: str) -> list[SpotifyTrack]:
     raw_tracks = play_order_sort_spotify(raw_tracks=tracks_dict.get("items", []))
 
     if current_track:
+        current_track_id = current_track.get("track", {}).get("id")
+        raw_tracks = [t for t in raw_tracks if t.get("track", {}).get("id") != current_track_id]
         raw_tracks.insert(0, current_track)
-        raw_tracks.pop()
+        if raw_tracks:
+            raw_tracks.pop()
 
     try:
         tracks = build_tracks_object_spotify(raw_tracks=raw_tracks)
@@ -31,8 +34,10 @@ async def prepare_yandex(hgramid: str) -> list[YandexMusicTrack]:
     current_track = await get_current_playing_track_yandex(hgramid=hgramid)
 
     if current_track:
+        tracks = [t for t in tracks if t.id != current_track.id]
         tracks.insert(0, current_track)
-        tracks.pop()
+        if tracks:
+            tracks.pop()
 
     return tracks
 
