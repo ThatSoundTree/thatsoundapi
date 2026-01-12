@@ -1,4 +1,4 @@
-from sqlalchemy import select, insert
+from sqlalchemy import select, insert, update
 from uuid import UUID
 from thatsoundapi.utils.exceptions.app import UnknownDatabaseError
 
@@ -33,6 +33,16 @@ class TracksRepository:
         if track is None:
             raise UnknownDatabaseError()
         return track
+
+    @staticmethod
+    async def save_tfile_url(external_track_id: str, tfile_url: str) -> None:
+        """Save tfile url."""
+        session = db_session.get()
+        if session is None:
+            raise UnknownDatabaseError
+        query = update(Track).where(Track.external_id == external_track_id).values(tfile_url=tfile_url)
+        await session.execute(query)
+        return None
 
 
 class ScrobblesRepository:

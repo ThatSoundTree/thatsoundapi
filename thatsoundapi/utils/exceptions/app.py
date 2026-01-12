@@ -1,4 +1,4 @@
-from thatsoundapi.utils.exceptions.base import InternalServerError, UnauthorizedError
+from thatsoundapi.utils.exceptions.base import InternalServerError, UnauthorizedError, NotFoundError
 
 
 class UnknownDatabaseError(InternalServerError):
@@ -13,7 +13,13 @@ class UnauthorizedRequestError(UnauthorizedError):
     message = "Unauthorized request error. Please use basic authentication first"
 
 
-class UserNotFoundError(UnauthorizedRequestError):
+class UserNotFoundError(NotFoundError):
     """User not found error (404)."""
 
     message = "User not found error. Invalid hgramid param"
+
+
+class TrackNotFoundError(NotFoundError):
+    """User not found error (404)."""
+
+    message = "Track not found error. Invalid external track id"
