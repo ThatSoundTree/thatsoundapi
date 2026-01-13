@@ -6,13 +6,13 @@ from urllib.parse import urlencode
 
 from loguru import logger
 
-from thatsoundapi.api.v1.models.spotify import SpotifyTrack
+from thatsoundapi.api.v1.models.sounds import TrackView
 from thatsoundapi.utils.exceptions.spotify import NoSpotifyIntegrationError, UnknownSpotifyAPIError
 
 from thatsoundapi.db.redis import RedisClient
 from thatsoundapi.core.spotify.models import SpotifyTokens
 from thatsoundapi.core.spotify.oauth import exchange_code_for_tokens, check_and_save_tokens, refresh_access_token
-from thatsoundapi.settings import get_spotify_settings
+from thatsoundapi.settings import get_spotify_settings, Settings
 from thatsoundapi.utils.http_client import HttpClient
 
 
@@ -135,19 +135,20 @@ def play_order_sort(raw_tracks: list) -> list:
     return unique_tracks
 
 
-def build_tracks_object(raw_tracks: list) -> list[SpotifyTrack]:
+def build_tracks_object(raw_tracks: list) -> list[TrackView]:
     spotify_tracks = []
     for item in raw_tracks:
         track_data = item["track"]
         artists = [artist["name"] for artist in track_data["artists"]]
         album_cover_url = extract_album_cover(album=track_data["album"])
-        spotify_track = SpotifyTrack.model_construct(
+        spotify_track = TrackView.model_construct(
             id=track_data["id"],
             name=track_data["name"],
             artists=artists,
             album_cover_url=album_cover_url,
             played_at=item["played_at"],
-            url=item["track"].get("external_urls", {}).get("spotify")
+            url=item["track"].get("external_urls", {}).get("spotify"),
+            provider=Settings.Providers.Spotify.value
         )
         spotify_tracks.append(spotify_track)
 

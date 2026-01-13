@@ -3,9 +3,6 @@ from typing import Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from thatsoundapi.api.v1.models.spotify import SpotifyTrack
-from thatsoundapi.api.v1.models.yandex_music import YandexMusicTrack
-
 
 class TrackProvider(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -23,6 +20,15 @@ class Track(BaseModel):
     tfile_url: Optional[str] = Field(default=None, description="Track file URL")
 
 
+class TrackView(BaseModel):
+    provider: int
+    id: str = Field(..., description="Spotify track ID")
+    name: str = Field(..., description="Track name")
+    artists: list[str] = Field(..., description="List of artist names")
+    album_cover_url: Optional[str] = Field(default=None, description="Album cover image URL")
+    url: Optional[str] = Field(default=None, description="Spotify track URL")
+
+
 class Scrobble(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -32,8 +38,8 @@ class Scrobble(BaseModel):
 
 
 class IntegrationsTracks(BaseModel):
-    spotify: list[SpotifyTrack]
-    yandex_music: list[YandexMusicTrack]
+    spotify: list[TrackView]
+    yandex_music: list[TrackView]
 
 
 class RecentTracksResponse(BaseModel):
