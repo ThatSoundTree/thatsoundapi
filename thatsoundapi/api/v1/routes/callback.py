@@ -25,7 +25,8 @@ async def spotify_callback(
 ):
     """Callback from Spotify OAuth."""
 
-    hgramid = await RedisClient.get_spotify_oauth_state(state=state)
+    redis = RedisClient.current()
+    hgramid = await redis.get_spotify_oauth_state(state=state)
     if not hgramid:
         logger.warning("[spotify] invalid or expired state: {state}", state[:8])
         raise InvalidSpotifyOAuthStateError

@@ -29,4 +29,5 @@ async def check_and_save_token(hgramid: str, token: YandexToken) -> None:
         raise YandexTokenError
     token.user_id = int(user_id)
     logger.success("[{hgramid}] [yandex] saved tokens", hgramid=hgramid[:8])
-    await RedisClient.save_yandex_token(hgramid=hgramid, token=token)
+    redis = RedisClient.current()
+    await redis.save_yandex_token(hgramid=hgramid, token=token)

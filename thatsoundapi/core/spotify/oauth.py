@@ -5,7 +5,6 @@ from typing import Callable, Any
 
 from loguru import logger
 
-from thatsoundapi.core.integrations import user_integrations_service
 from thatsoundapi.utils.exceptions.spotify import SpotifyExchangeTokenError, SpotifyTokenError, \
     RefreshSpotifyTokenError, NoSpotifyIntegrationError
 
