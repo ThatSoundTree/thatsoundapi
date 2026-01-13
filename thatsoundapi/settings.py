@@ -159,6 +159,7 @@ class TSRipperSettings(BaseSettings):
     """Something in the way."""
 
     BASE_URL: str
+    ATTEMPTS: int = Field(default=5)
 
     model_config = SettingsConfigDict(
         env_file=".env", case_sensitive=False, extra="ignore", env_prefix="TSRIPPER_"
