@@ -65,6 +65,7 @@ async def scrobble_track(
     track_id: str = Query(..., description="Track ID"),
     track_provider: int = Query(..., description="Track provider ID (i.e spotify=1)"),
     _: Transaction = Depends(get_transaction),
+    __: RedisClient = Depends(get_redis),
 ):
     logger.info(
         "[{hgramid}] scrobbling {track_id} from {provider_id}",
@@ -91,7 +92,8 @@ async def save_tfile_url(
     hgramid: str,
     external_track_id: str = Query(..., description="External track ID"),
     tfile_url: str = Query(..., description="Telegram file url for re-using"),
-    _: Transaction = Depends(get_transaction)
+    _: Transaction = Depends(get_transaction),
+    __: RedisClient = Depends(get_redis),
 ):
     logger.info(
         "[{hgramid}] saving track {external_track_id} from {tfile_url}",

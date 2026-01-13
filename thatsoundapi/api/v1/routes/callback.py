@@ -4,7 +4,7 @@ from loguru import logger
 
 from thatsoundapi.core.spotify.service import process_callback as process_callback_spotify
 from thatsoundapi.core.yandex.service import process_callback as process_callback_yandex
-from thatsoundapi.db import Transaction, get_transaction
+from thatsoundapi.db import Transaction, get_transaction, get_redis
 from thatsoundapi.repositories import UserRepository
 from thatsoundapi.utils.exceptions.app import UserNotFoundError
 from thatsoundapi.utils.exceptions.spotify import InvalidSpotifyOAuthStateError
@@ -21,7 +21,8 @@ callback_router = APIRouter()
 )
 async def spotify_callback(
     code: str = Query(..., description="Spotify authorization code"),
-    state: str = Query(..., description="OAuth state parameter")
+    state: str = Query(..., description="OAuth state parameter"),
+    __: RedisClient = Depends(get_redis)
 ):
     """Callback from Spotify OAuth."""
 
@@ -46,6 +47,7 @@ async def yandex_callback(
     hgramid: str = Query(..., description="Hashed telegram id"),
     url: str = Query(..., description="Authorized yandex url"),
     _: Transaction = Depends(get_transaction),
+    __: RedisClient = Depends(get_redis)
 ):
 
     user = await UserRepository.get_by_hgramid(hgramid=hgramid)
