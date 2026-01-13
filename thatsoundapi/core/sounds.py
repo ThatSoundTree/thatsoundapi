@@ -12,8 +12,12 @@ from thatsoundapi.core.yandex.service import get_recent_played_tracks as get_rec
 
 @keep_token_alive
 async def prepare_spotify(hgramid: str) -> list[SpotifyTrack]:
-    tracks_dict = await get_recent_played_tracks_spotify(hgramid=hgramid)
-    current_track = await get_current_playing_track_spotify(hgramid=hgramid)
+    async with asyncio.TaskGroup() as tg:
+        recent_task = tg.create_task(get_recent_played_tracks_spotify(hgramid=hgramid))
+        current_task = tg.create_task(get_current_playing_track_spotify(hgramid=hgramid))
+
+    tracks_dict = recent_task.result()
+    current_track = current_task.result()
     raw_tracks = play_order_sort_spotify(raw_tracks=tracks_dict.get("items", []))
 
     if current_track:
@@ -31,8 +35,12 @@ async def prepare_spotify(hgramid: str) -> list[SpotifyTrack]:
 
 
 async def prepare_yandex(hgramid: str) -> list[YandexMusicTrack]:
-    tracks = await get_recent_played_tracks_yandex(hgramid=hgramid)
-    current_track = await get_current_playing_track_yandex(hgramid=hgramid)
+    async with asyncio.TaskGroup() as tg:
+        recent_task = tg.create_task(get_recent_played_tracks_yandex(hgramid=hgramid))
+        current_task = tg.create_task(get_current_playing_track_yandex(hgramid=hgramid))
+
+    tracks = recent_task.result()
+    current_track = current_task.result()
 
     if current_track:
         tracks.insert(0, current_track)
@@ -46,14 +54,15 @@ async def recent_played_tracks(hgramid: str, integrations: UserIntegrationsRespo
     spotify_tracks: list[SpotifyTrack] = []
     yandex_tracks: list[YandexMusicTrack] = []
 
-    async with asyncio.TaskGroup() as tg:
-        spotify_task = tg.create_task(prepare_spotify(hgramid=hgramid)) if integrations.spotify else None
-        yandex_task = tg.create_task(prepare_yandex(hgramid=hgramid)) if integrations.YandexMusic else None
+    if integrations.spotify or integrations.YandexMusic:
+        async with asyncio.TaskGroup() as tg:
+            spotify_task = tg.create_task(prepare_spotify(hgramid=hgramid)) if integrations.spotify else None
+            yandex_task = tg.create_task(prepare_yandex(hgramid=hgramid)) if integrations.YandexMusic else None
 
-    if spotify_task:
-        spotify_tracks = spotify_task.result()
-    if yandex_task:
-        yandex_tracks = yandex_task.result()
+        if spotify_task:
+            spotify_tracks = spotify_task.result()
+        if yandex_task:
+            yandex_tracks = yandex_task.result()
 
     result = IntegrationsTracks.model_construct(spotify=spotify_tracks, yandex_music=yandex_tracks)
     return RecentTracksResponse.model_construct(tracks=result)
