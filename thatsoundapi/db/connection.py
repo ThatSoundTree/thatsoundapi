@@ -1,10 +1,15 @@
 from contextvars import ContextVar, Token
+from typing import TYPE_CHECKING
 
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from thatsoundapi.db.base import container
 
+if TYPE_CHECKING:
+    from thatsoundapi.db.redis import RedisClient
+
 db_session: ContextVar[AsyncSession | None] = ContextVar("db_session", default=None)
+redis_client: ContextVar["RedisClient | None"] = ContextVar("redis_client", default=None)
 
 
 class Transaction:

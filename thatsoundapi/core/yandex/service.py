@@ -3,7 +3,7 @@ from urllib.parse import urlparse, parse_qs
 
 from loguru import logger
 
-from thatsoundapi.api.v1.models.yandex_music import YandexMusicTrack
+from thatsoundapi.api.v1.models.sounds import TrackView
 from thatsoundapi.core.yandex.current import get_current_track
 from thatsoundapi.core.yandex.history import extract_tracks
 from thatsoundapi.core.yandex.models import YandexToken
@@ -42,7 +42,8 @@ async def process_callback(
     hgramid: str,
     query_url: str,
 ) -> None:
-    await RedisClient.delete_yandex_token(hgramid=hgramid)
+    redis = RedisClient.current()
+    await redis.delete_yandex_token(hgramid=hgramid)
 
     token = extract_token_data(
         hgramid=hgramid,
@@ -58,11 +59,11 @@ async def process_callback(
 async def get_recent_played_tracks(
     hgramid: str,
     limit: int = 15,
-) -> list[YandexMusicTrack]:
+) -> list[TrackView]:
     settings = get_yandex_settings()
-
+    redis = RedisClient.current()
     token = YandexToken.model_validate(
-        await RedisClient.get_yandex_token(hgramid=hgramid)
+        await redis.get_yandex_token(hgramid=hgramid)
     )
 
     response = await HttpClient.get(
@@ -82,9 +83,10 @@ async def get_recent_played_tracks(
 
 async def get_current_playing_track(
     hgramid: str,
-) -> YandexMusicTrack | None:
+) -> TrackView | None:
+    redis = RedisClient.current()
     token = YandexToken.model_validate(
-        await RedisClient.get_yandex_token(hgramid=hgramid)
+        await redis.get_yandex_token(hgramid=hgramid)
     )
 
     track = await get_current_track(token.access_token)

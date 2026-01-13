@@ -1,4 +1,4 @@
-from thatsoundapi.api.v1.models.yandex_music import YandexMusicTrack
+from thatsoundapi.api.v1.models.sounds import TrackView
 from thatsoundapi.core.yandex.ynison import (
     generate_device_id,
     get_redirect_data,
@@ -13,7 +13,7 @@ from thatsoundapi.utils.http_client import HttpClient
 async def get_track_by_id(
     access_token: str,
     track_id: str,
-) -> YandexMusicTrack | None:
+) -> TrackView | None:
     settings = get_yandex_settings()
 
     response = await HttpClient.get(
@@ -30,7 +30,7 @@ async def get_track_by_id(
     return map_track(model) if model else None
 
 
-async def get_current_track(access_token: str) -> YandexMusicTrack | None:
+async def get_current_track(access_token: str) -> TrackView | None:
     device_id = generate_device_id()
 
     redirect, ws_proto = get_redirect_data(

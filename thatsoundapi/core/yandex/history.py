@@ -1,4 +1,4 @@
-from thatsoundapi.api.v1.models.yandex_music import YandexMusicTrack
+from thatsoundapi.api.v1.models.sounds import TrackView
 from thatsoundapi.core.yandex.normalizer import normalize_track_model
 from thatsoundapi.core.yandex.mapper import map_track
 
@@ -6,8 +6,8 @@ from thatsoundapi.core.yandex.mapper import map_track
 def extract_tracks(
     items: list[dict],
     limit: int,
-) -> list[YandexMusicTrack]:
-    tracks: list[YandexMusicTrack] = []
+) -> list[TrackView]:
+    tracks: list[TrackView] = []
     seen_track_ids: set[str] = set()
 
     for item in items:

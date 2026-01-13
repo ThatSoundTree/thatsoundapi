@@ -1,4 +1,5 @@
 import base64
+from enum import Enum
 from functools import lru_cache
 from typing import Literal
 from urllib.parse import quote_plus
@@ -92,6 +93,9 @@ class Settings(BaseSettings):
             return f"redis://:{password}@{host}:{port}/{db}"
         return f"redis://{host}:{port}/{db}"
 
+    class Providers(Enum):
+        Spotify = 1
+        YandexMusic = 2
 
 class SpotifyIntegrationSettings(BaseSettings):
     """Something in the way."""

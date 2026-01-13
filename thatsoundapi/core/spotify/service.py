@@ -6,21 +6,23 @@ from urllib.parse import urlencode
 
 from loguru import logger
 
-from thatsoundapi.api.v1.models.spotify import SpotifyTrack
+from thatsoundapi.api.v1.models.sounds import TrackView
 from thatsoundapi.utils.exceptions.spotify import NoSpotifyIntegrationError, UnknownSpotifyAPIError
 
 from thatsoundapi.db.redis import RedisClient
 from thatsoundapi.core.spotify.models import SpotifyTokens
 from thatsoundapi.core.spotify.oauth import exchange_code_for_tokens, check_and_save_tokens, refresh_access_token
-from thatsoundapi.settings import get_spotify_settings
+from thatsoundapi.settings import get_spotify_settings, Settings
 from thatsoundapi.utils.http_client import HttpClient
 
 
 async def initiate_login(hgramid: str) -> str:
     state = secrets.token_hex(16)
     spotify_settings = get_spotify_settings()
+    redis = RedisClient.current()
 
-    await RedisClient.save_spotify_oauth_state(hgramid=hgramid, state=state, ttl=spotify_settings.OAUTH_STATE_TTL)
+    await redis.save_spotify_oauth_state(hgramid=hgramid, state=state, ttl=spotify_settings.OAUTH_STATE_TTL)
+
     params = {
         "client_id": spotify_settings.CLIENT_ID,
         "response_type": "code",
@@ -33,13 +35,15 @@ async def initiate_login(hgramid: str) -> str:
 
 
 async def process_callback(hgramid: str, state: str, code: str):
-    await RedisClient.delete_spotify_oauth_state(state=state)
+    redis = RedisClient.current()
+    await redis.delete_spotify_oauth_state(state=state)
     tokens = await exchange_code_for_tokens(hgramid=hgramid, code=code)
     await check_and_save_tokens(hgramid=hgramid, tokens=tokens)
 
 
 async def process_refresh_tokens(hgramid: str):
-    tokens_dict = await RedisClient.get_spotify_tokens(hgramid=hgramid)
+    redis = RedisClient.current()
+    tokens_dict = await redis.get_spotify_tokens(hgramid=hgramid)
     if not tokens_dict:
         logger.warning("[{hgramid}] [spotify] empty tokens", hgramid=hgramid[:8])
         raise NoSpotifyIntegrationError
@@ -49,7 +53,8 @@ async def process_refresh_tokens(hgramid: str):
 
 async def get_recent_played_tracks(hgramid: str, limit: int = 15) -> dict[str, Any]:
     spotify_settings = get_spotify_settings()
-    tokens_dict = await RedisClient.get_spotify_tokens(hgramid=hgramid)
+    redis = RedisClient.current()
+    tokens_dict = await redis.get_spotify_tokens(hgramid=hgramid)
     if not tokens_dict:
         raise NoSpotifyIntegrationError
     tokens = SpotifyTokens.model_validate(tokens_dict)
@@ -71,7 +76,8 @@ async def get_recent_played_tracks(hgramid: str, limit: int = 15) -> dict[str, A
 
 async def get_current_playing_track(hgramid: str) -> dict | None:
     spotify_settings = get_spotify_settings()
-    tokens_dict = await RedisClient.get_spotify_tokens(hgramid=hgramid)
+    redis = RedisClient.current()
+    tokens_dict = await redis.get_spotify_tokens(hgramid=hgramid)
     if not tokens_dict:
         raise NoSpotifyIntegrationError
     tokens = SpotifyTokens.model_validate(tokens_dict)
@@ -129,19 +135,20 @@ def play_order_sort(raw_tracks: list) -> list:
     return unique_tracks
 
 
-def build_tracks_object(raw_tracks: list) -> list[SpotifyTrack]:
+def build_tracks_object(raw_tracks: list) -> list[TrackView]:
     spotify_tracks = []
     for item in raw_tracks:
         track_data = item["track"]
         artists = [artist["name"] for artist in track_data["artists"]]
         album_cover_url = extract_album_cover(album=track_data["album"])
-        spotify_track = SpotifyTrack.model_construct(
+        spotify_track = TrackView.model_construct(
             id=track_data["id"],
             name=track_data["name"],
             artists=artists,
             album_cover_url=album_cover_url,
             played_at=item["played_at"],
-            url=item["track"].get("external_urls", {}).get("spotify")
+            url=item["track"].get("external_urls", {}).get("spotify"),
+            provider=Settings.Providers.Spotify.value
         )
         spotify_tracks.append(spotify_track)
 

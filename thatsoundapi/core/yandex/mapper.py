@@ -1,7 +1,8 @@
-from thatsoundapi.api.v1.models.yandex_music import YandexMusicTrack
+from thatsoundapi.api.v1.models.sounds import TrackView
+from thatsoundapi.settings import Settings
 
 
-def map_track(model: dict) -> YandexMusicTrack | None:
+def map_track(model: dict) -> TrackView | None:
     track_id = model.get("id")
     title = model.get("title")
 
@@ -28,10 +29,11 @@ def map_track(model: dict) -> YandexMusicTrack | None:
                 f"https://music.yandex.ru/album/{album_id}/track/{track_id}"
             )
 
-    return YandexMusicTrack(
+    return TrackView(
         id=str(track_id),
         name=title,
         artists=artists,
         album_cover_url=album_cover_url,
         url=track_url,
+        provider=Settings.Providers.YandexMusic.value
     )

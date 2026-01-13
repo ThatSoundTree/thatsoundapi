@@ -11,8 +11,6 @@ from thatsoundapi.api.v1.routes.users import user_router
 from thatsoundapi.utils.exceptions.base import BaseAPIException, get_error_code_from_status_code
 from thatsoundapi.utils.protocols import ErrorDetail, ErrorResponse
 
-from thatsoundapi.db.redis import RedisClient
-
 
 log_level = os.getenv("BACKEND_LOG_LEVEL", "INFO")
 logger.remove()
@@ -24,11 +22,9 @@ async def lifespan(app: FastAPI):
     """Application lifespan context manager"""
     # Startup
     logger.info("Starting application...")
-    await RedisClient.connect()
     yield
     # Shutdown
     logger.info("Shutting down application...")
-    await RedisClient.disconnect()
 
 
 app = FastAPI(

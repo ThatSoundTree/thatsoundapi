@@ -7,9 +7,9 @@ from thatsoundapi.api.v1.models.users import UserIntegrationsResponse
 from thatsoundapi.core.integrations import user_integrations_service
 from thatsoundapi.core.scrobbles import process_scrobble_track, save_cached_url
 from thatsoundapi.core.sounds import recent_played_tracks
-from thatsoundapi.core.spotify.oauth import keep_token_alive as keep_token_alive_spotify
 from thatsoundapi.db.connection import Transaction
-from thatsoundapi.db.dependencies import get_transaction
+from thatsoundapi.db.dependencies import get_transaction, get_redis
+from thatsoundapi.db.redis import RedisClient
 from thatsoundapi.utils.auth import verify_basic_auth
 
 user_router = APIRouter(tags=["Main"], dependencies=[Depends(verify_basic_auth)])
@@ -23,6 +23,7 @@ user_router = APIRouter(tags=["Main"], dependencies=[Depends(verify_basic_auth)]
 async def user_integrations(
     hgramid: str,
     _: Transaction = Depends(get_transaction),
+    __: RedisClient = Depends(get_redis),
 ) -> UserIntegrationsResponse:
     """Get user integrations status."""
 
@@ -36,10 +37,10 @@ async def user_integrations(
     status_code=status.HTTP_200_OK,
     response_model=RecentTracksResponse,
 )
-@keep_token_alive_spotify
 async def get_recent_tracks(
     hgramid: str,
     _: Transaction = Depends(get_transaction),
+    __: RedisClient = Depends(get_redis)
 ):
     """Get recently played tracks for a user (Spotify only)."""
     logger.info("[{hgramid}] recent tracks", hgramid=hgramid[:8])
