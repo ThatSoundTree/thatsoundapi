@@ -42,7 +42,8 @@ async def process_callback(
     hgramid: str,
     query_url: str,
 ) -> None:
-    await RedisClient.delete_yandex_token(hgramid=hgramid)
+    redis = RedisClient.current()
+    await redis.delete_yandex_token(hgramid=hgramid)
 
     token = extract_token_data(
         hgramid=hgramid,
@@ -60,9 +61,9 @@ async def get_recent_played_tracks(
     limit: int = 15,
 ) -> list[YandexMusicTrack]:
     settings = get_yandex_settings()
-
+    redis = RedisClient.current()
     token = YandexToken.model_validate(
-        await RedisClient.get_yandex_token(hgramid=hgramid)
+        await redis.get_yandex_token(hgramid=hgramid)
     )
 
     response = await HttpClient.get(
@@ -83,8 +84,9 @@ async def get_recent_played_tracks(
 async def get_current_playing_track(
     hgramid: str,
 ) -> YandexMusicTrack | None:
+    redis = RedisClient.current()
     token = YandexToken.model_validate(
-        await RedisClient.get_yandex_token(hgramid=hgramid)
+        await redis.get_yandex_token(hgramid=hgramid)
     )
 
     track = await get_current_track(token.access_token)

@@ -1,13 +1,16 @@
+import asyncio
 from loguru import logger
 
 from thatsoundapi.api.v1.models.sounds import RecentTracksResponse, IntegrationsTracks
 from thatsoundapi.api.v1.models.spotify import SpotifyTrack
 from thatsoundapi.api.v1.models.users import UserIntegrationsResponse
 from thatsoundapi.api.v1.models.yandex_music import YandexMusicTrack
+from thatsoundapi.core.spotify.oauth import keep_token_alive
 from thatsoundapi.core.spotify.service import get_recent_played_tracks as get_recent_played_tracks_spotify, get_current_playing_track as get_current_playing_track_spotify, play_order_sort as play_order_sort_spotify, build_tracks_object as build_tracks_object_spotify
 from thatsoundapi.core.yandex.service import get_recent_played_tracks as get_recent_played_tracks_yandex, get_current_playing_track as get_current_playing_track_yandex
 
 
+@keep_token_alive
 async def prepare_spotify(hgramid: str) -> list[SpotifyTrack]:
     tracks_dict = await get_recent_played_tracks_spotify(hgramid=hgramid)
     current_track = await get_current_playing_track_spotify(hgramid=hgramid)
@@ -40,11 +43,17 @@ async def prepare_yandex(hgramid: str) -> list[YandexMusicTrack]:
 
 async def recent_played_tracks(hgramid: str, integrations: UserIntegrationsResponse) -> RecentTracksResponse:
     # Implement Last.FM. Now only Spotify and Yandex.Music
-    spotify_tracks, yandex_tracks = [], []
-    if integrations.spotify:
-        spotify_tracks = await prepare_spotify(hgramid=hgramid)
-    if integrations.YandexMusic:
-        yandex_tracks = await prepare_yandex(hgramid=hgramid)
+    spotify_tracks: list[SpotifyTrack] = []
+    yandex_tracks: list[YandexMusicTrack] = []
 
-    result = IntegrationsTracks.model_construct(spotify=spotify_tracks,yandex_music=yandex_tracks)
+    async with asyncio.TaskGroup() as tg:
+        spotify_task = tg.create_task(prepare_spotify(hgramid=hgramid)) if integrations.spotify else None
+        yandex_task = tg.create_task(prepare_yandex(hgramid=hgramid)) if integrations.YandexMusic else None
+
+    if spotify_task:
+        spotify_tracks = spotify_task.result()
+    if yandex_task:
+        yandex_tracks = yandex_task.result()
+
+    result = IntegrationsTracks.model_construct(spotify=spotify_tracks, yandex_music=yandex_tracks)
     return RecentTracksResponse.model_construct(tracks=result)

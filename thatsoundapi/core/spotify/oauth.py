@@ -57,7 +57,8 @@ async def check_and_save_tokens(hgramid: str, tokens: SpotifyTokens) -> None:
     is_alive = await is_token_alive(hgramid=hgramid, access_token=tokens.access_token)
     if not is_alive:
         raise SpotifyTokenError
-    await RedisClient.save_spotify_tokens(hgramid=hgramid, tokens=tokens)
+    redis = RedisClient.current()
+    await redis.save_spotify_tokens(hgramid=hgramid, tokens=tokens)
     logger.success("[{hgramid}] [spotify] saved tokens", hgramid=hgramid[:8])
 
 
@@ -102,12 +103,8 @@ def keep_token_alive(func: Callable) -> Callable:
         hgramid = bound_args.arguments.get('hgramid')
 
         if hgramid:
-
-            integrations = await user_integrations_service(hgramid=hgramid)
-            if not integrations.spotify:
-                return await func(*args, **kwargs)
-
-            tokens_dict = await RedisClient.get_spotify_tokens(hgramid=hgramid)
+            redis = RedisClient.current()
+            tokens_dict = await redis.get_spotify_tokens(hgramid=hgramid)
             if not tokens_dict:
                 raise NoSpotifyIntegrationError
             tokens = SpotifyTokens.model_validate(tokens_dict)
@@ -117,10 +114,7 @@ def keep_token_alive(func: Callable) -> Callable:
 
             if time_until_expiry <= spotify_settings.TOKEN_EXPIRE_LIMIT:
                 await refresh_access_token(hgramid=hgramid, old_tokens=tokens)
-            #
-            # is_alive = await is_token_alive(hgramid=hgramid, access_token=tokens.access_token)
-            # if not is_alive:
-            #     await refresh_access_token(hgramid=hgramid, tokens=tokens)
+
         return await func(*args, **kwargs)
 
     return wrapper
