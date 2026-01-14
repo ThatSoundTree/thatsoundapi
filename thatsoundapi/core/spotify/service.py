@@ -9,8 +9,7 @@ from loguru import logger
 from thatsoundapi.api.v1.models.sounds import TrackView
 from thatsoundapi.utils.exceptions.spotify import NoSpotifyIntegrationError, UnknownSpotifyAPIError
 
-from thatsoundapi.db.redis import RedisClient, RedisService
-from thatsoundapi.core.spotify.models import SpotifyTokens
+from thatsoundapi.db.redis import RedisService
 from thatsoundapi.core.spotify.oauth import exchange_code_for_tokens, check_and_save_tokens, refresh_access_token
 from thatsoundapi.settings import get_spotify_settings, Settings
 from thatsoundapi.utils.http_client import HttpClient
@@ -39,14 +38,13 @@ async def process_callback(redis: RedisService, hgramid: str, state: str, code: 
     await check_and_save_tokens(redis=redis, hgramid=hgramid, tokens=tokens)
 
 
-async def process_refresh_tokens(hgramid: str):
-    redis = RedisClient.current()
-    tokens_dict = await redis.get_spotify_tokens(hgramid=hgramid)
-    if not tokens_dict:
+async def process_refresh_tokens(redis: RedisService, hgramid: str):
+    old_tokens = await redis.get_spotify_tokens(hgramid=hgramid)
+    if not old_tokens:
         logger.warning("[{hgramid}] [spotify] empty tokens", hgramid=hgramid[:8])
         raise NoSpotifyIntegrationError
-    old_tokens = SpotifyTokens.model_validate(tokens_dict)
-    await refresh_access_token(hgramid=hgramid, old_tokens=old_tokens)
+
+    await refresh_access_token(redis=redis, hgramid=hgramid, old_tokens=old_tokens)
 
 
 async def get_recent_played_tracks(hgramid: str, access_token: str, limit: int = 7) -> dict[str, Any]:

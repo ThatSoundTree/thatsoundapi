@@ -1,7 +1,7 @@
 from loguru import logger
 
 from thatsoundapi.core.yandex.models import YandexToken
-from thatsoundapi.db.redis import RedisClient
+from thatsoundapi.db.redis import RedisService
 from thatsoundapi.settings import get_yandex_settings
 from thatsoundapi.utils.exceptions.yandex import YandexTokenError
 from thatsoundapi.utils.http_client import HttpClient
@@ -23,11 +23,11 @@ async def get_user_id(hgramid:str, access_token: str) -> str | None:
     return str(uid) if uid is not None else None
 
 
-async def check_and_save_token(hgramid: str, token: YandexToken) -> None:
+async def check_and_save_token(redis: RedisService, hgramid: str, token: YandexToken) -> None:
     user_id = await get_user_id(hgramid=hgramid, access_token=token.access_token)
     if not user_id:
         raise YandexTokenError
+
     token.user_id = int(user_id)
     logger.success("[{hgramid}] [yandex] saved tokens", hgramid=hgramid[:8])
-    redis = RedisClient.current()
     await redis.save_yandex_token(hgramid=hgramid, token=token)

@@ -1,7 +1,4 @@
-import inspect
 import time
-from functools import wraps
-from typing import Callable, Any
 
 from loguru import logger
 
@@ -87,28 +84,3 @@ async def refresh_access_token(redis: RedisService, hgramid: str, old_tokens: Sp
 
     await check_and_save_tokens(redis=redis, hgramid=hgramid, tokens=new_tokens)
     return new_tokens
-
-
-def keep_token_alive(func: Callable) -> Callable:
-    """Something in the way."""
-
-    @wraps(func)
-    async def wrapper(*args: Any, **kwargs: Any) -> Any:
-        spotify_settings = get_spotify_settings()
-        sig = inspect.signature(func)
-        bound_args = sig.bind(*args, **kwargs)
-        bound_args.apply_defaults()
-
-        hgramid = bound_args.arguments.get('hgramid')
-        spotify_tokens = bound_args.arguments.get('spotify_tokens')
-
-        if hgramid and isinstance(spotify_tokens, SpotifyTokens):
-            now = int(time.time())
-            time_until_expiry = spotify_tokens.expires_at - now if spotify_tokens.expires_at else 0
-
-            if time_until_expiry <= spotify_settings.TOKEN_EXPIRE_LIMIT:
-                await refresh_access_token(hgramid=hgramid, old_tokens=tokens)
-
-        return await func(*args, **kwargs)
-
-    return wrapper

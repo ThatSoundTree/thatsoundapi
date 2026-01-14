@@ -8,7 +8,7 @@ from thatsoundapi.core.yandex.current import get_current_track
 from thatsoundapi.core.yandex.history import extract_tracks
 from thatsoundapi.core.yandex.models import YandexToken
 from thatsoundapi.core.yandex.oauth import check_and_save_token
-from thatsoundapi.db.redis import RedisClient
+from thatsoundapi.db.redis import RedisService
 from thatsoundapi.settings import get_yandex_settings
 from thatsoundapi.utils.exceptions.yandex import UnknownYandexMusicAPIError
 from thatsoundapi.utils.http_client import HttpClient
@@ -40,10 +40,10 @@ def extract_token_data(
 
 
 async def process_callback(
+    redis: RedisService,
     hgramid: str,
     query_url: str,
 ) -> None:
-    redis = RedisClient.current()
     await redis.delete_yandex_token(hgramid=hgramid)
 
     token = extract_token_data(
@@ -52,6 +52,7 @@ async def process_callback(
     )
 
     await check_and_save_token(
+        redis=redis,
         hgramid=hgramid,
         token=token,
     )

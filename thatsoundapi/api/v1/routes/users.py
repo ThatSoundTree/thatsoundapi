@@ -9,7 +9,7 @@ from thatsoundapi.core.scrobbles import process_scrobble_track, save_cached_url
 from thatsoundapi.core.sounds import process_recent_played_tracks
 from thatsoundapi.db.connection import Transaction
 from thatsoundapi.db.dependencies import get_transaction, get_redis
-from thatsoundapi.db.redis import RedisClient, RedisService
+from thatsoundapi.db.redis import RedisService
 from thatsoundapi.utils.auth import verify_basic_auth
 
 user_router = APIRouter(tags=["Main"], dependencies=[Depends(verify_basic_auth)])
@@ -63,8 +63,7 @@ async def scrobble_track(
     hgramid: str,
     track_id: str = Query(..., description="Track ID"),
     track_provider: int = Query(..., description="Track provider ID (i.e spotify=1)"),
-    _: Transaction = Depends(get_transaction),
-    __: RedisClient = Depends(get_redis),
+    _: Transaction = Depends(get_transaction)
 ):
     logger.info(
         "[{hgramid}] scrobbling {track_id} from {provider_id}",
@@ -91,8 +90,7 @@ async def save_tfile_url(
     hgramid: str,
     external_track_id: str = Query(..., description="External track ID"),
     tfile_url: str = Query(..., description="Telegram file url for re-using"),
-    _: Transaction = Depends(get_transaction),
-    __: RedisClient = Depends(get_redis),
+    _: Transaction = Depends(get_transaction)
 ):
     logger.info(
         "[{hgramid}] saving track {external_track_id} from {tfile_url}",

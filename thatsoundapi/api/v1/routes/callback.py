@@ -9,7 +9,7 @@ from thatsoundapi.repositories import UserRepository
 from thatsoundapi.utils.exceptions.app import UserNotFoundError
 from thatsoundapi.utils.exceptions.spotify import InvalidSpotifyOAuthStateError
 
-from thatsoundapi.db.redis import RedisClient, RedisService
+from thatsoundapi.db.redis import RedisService
 
 callback_router = APIRouter()
 
@@ -45,8 +45,8 @@ async def spotify_callback(
 async def yandex_callback(
     hgramid: str = Query(..., description="Hashed telegram id"),
     url: str = Query(..., description="Authorized yandex url"),
-    _: Transaction = Depends(get_transaction),
-    __: RedisClient = Depends(get_redis)
+    redis: RedisService = Depends(get_redis),
+    _: Transaction = Depends(get_transaction)
 ):
 
     user = await UserRepository.get_by_hgramid(hgramid=hgramid)
@@ -55,5 +55,5 @@ async def yandex_callback(
         raise UserNotFoundError
 
     logger.info("[{hgramid}] [yandex] callback", hgramid=hgramid[:8])
-    await process_callback_yandex(hgramid=hgramid, query_url=url)
+    await process_callback_yandex(redis=redis, hgramid=hgramid, query_url=url)
     return '<html><head><style>body { color: green; }</style></head><body><h1>Success! Return to <a href="https://t.me/thatsoundbot">@thatsoundbot</a></h1></body></html>'
