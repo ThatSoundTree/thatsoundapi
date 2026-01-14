@@ -33,12 +33,12 @@ async def get_track_by_id(
 async def get_current_track(access_token: str) -> TrackView | None:
     device_id = generate_device_id()
 
-    redirect, ws_proto = get_redirect_data(
+    redirect, ws_proto = await get_redirect_data(
         access_token=access_token,
         device_id=device_id,
     )
 
-    state = get_player_state(
+    state = await get_player_state(
         access_token=access_token,
         redirect=redirect,
         ws_proto=ws_proto,

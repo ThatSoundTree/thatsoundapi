@@ -7,7 +7,8 @@ import json
 import random
 import string
 
-from thatsoundapi.utils.ws_client import WsClient
+import websockets
+from websockets.client import ClientProtocol
 
 
 YNISON_REDIRECT_URL = (
@@ -15,38 +16,41 @@ YNISON_REDIRECT_URL = (
     "redirector.YnisonRedirectService/GetRedirectToYnison"
 )
 
+# Патчим ClientProtocol один раз при импорте модуля для максимальной производительности
+_original_process_subprotocol = ClientProtocol.process_subprotocol
+ClientProtocol.process_subprotocol = lambda self, headers: None
+
 
 def generate_device_id(length: int = 16) -> str:
     return ''.join(random.choices(string.ascii_lowercase, k=length))
 
 
-def get_redirect_data(
+async def get_redirect_data(
     access_token: str,
     device_id: str,
 ) -> tuple[dict, dict]:
     ws_proto = {
         "Ynison-Device-Id": device_id,
-        "Ynison-Device-Info": json.dumps(
-            {"app_name": "Chrome", "type": 1}
-        ),
+        "Ynison-Device-Info": json.dumps({"app_name": "Chrome", "type": 1}),
     }
 
-    ws = WsClient.connect(
-        url=YNISON_REDIRECT_URL,
-        headers=[
-            f"Sec-WebSocket-Protocol: Bearer, v2, {json.dumps(ws_proto)}",
-            "Origin: http://music.yandex.ru",
-            f"Authorization: OAuth {access_token}",
-        ],
-    )
+    ws_proto_json = json.dumps(ws_proto)
+    headers = {
+        "Origin": "http://music.yandex.ru",
+        "Authorization": f"OAuth {access_token}",
+        "Sec-WebSocket-Protocol": f"Bearer, v2, {ws_proto_json}",
+    }
 
-    response = WsClient.recv_json(ws)
-    WsClient.close(ws)
+    async with websockets.connect(
+        YNISON_REDIRECT_URL,
+        additional_headers=headers,
+    ) as ws:
+        response = json.loads(await ws.recv())
 
     return response, ws_proto
 
 
-def get_player_state(
+async def get_player_state(
     access_token: str,
     redirect: dict,
     ws_proto: dict,
@@ -105,20 +109,16 @@ def get_player_state(
         "activity_interception_type": "DO_NOT_INTERCEPT_BY_DEFAULT",
     }
 
-    ws = WsClient.connect(
-        url=(
-            f"wss://{redirect['host']}/ynison_state."
-            "YnisonStateService/PutYnisonState"
-        ),
-        headers=[
-            f"Sec-WebSocket-Protocol: Bearer, v2, {json.dumps(ws_proto)}",
-            "Origin: http://music.yandex.ru",
-            f"Authorization: OAuth {access_token}",
-        ],
-    )
+    ws_proto_json = json.dumps(ws_proto)
+    url = f"wss://{redirect['host']}/ynison_state.YnisonStateService/PutYnisonState"
+    headers = {
+        "Origin": "http://music.yandex.ru",
+        "Authorization": f"OAuth {access_token}",
+        "Sec-WebSocket-Protocol": f"Bearer, v2, {ws_proto_json}",
+    }
 
-    WsClient.send_json(ws, payload)
-    response = WsClient.recv_json(ws)
-    WsClient.close(ws)
+    async with websockets.connect(url, additional_headers=headers) as ws:
+        await ws.send(json.dumps(payload))
+        response = json.loads(await ws.recv())
 
     return response
