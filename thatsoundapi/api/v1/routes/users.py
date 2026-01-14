@@ -6,10 +6,10 @@ from thatsoundapi.api.v1.models.sounds import RecentTracksResponse, Scrobble
 from thatsoundapi.api.v1.models.users import UserIntegrationsResponse
 from thatsoundapi.core.integrations import user_integrations_service
 from thatsoundapi.core.scrobbles import process_scrobble_track, save_cached_url
-from thatsoundapi.core.sounds import recent_played_tracks
+from thatsoundapi.core.sounds import process_recent_played_tracks
 from thatsoundapi.db.connection import Transaction
 from thatsoundapi.db.dependencies import get_transaction, get_redis
-from thatsoundapi.db.redis import RedisClient
+from thatsoundapi.db.redis import RedisService
 from thatsoundapi.utils.auth import verify_basic_auth
 
 user_router = APIRouter(tags=["Main"], dependencies=[Depends(verify_basic_auth)])
@@ -22,12 +22,12 @@ user_router = APIRouter(tags=["Main"], dependencies=[Depends(verify_basic_auth)]
 )
 async def user_integrations(
     hgramid: str,
+    redis: RedisService = Depends(get_redis),
     _: Transaction = Depends(get_transaction),
-    __: RedisClient = Depends(get_redis),
 ) -> UserIntegrationsResponse:
     """Get user integrations status."""
 
-    response = await user_integrations_service(hgramid=hgramid)
+    response = await user_integrations_service(redis=redis, hgramid=hgramid)
     return response
 
 
@@ -39,14 +39,13 @@ async def user_integrations(
 )
 async def get_recent_tracks(
     hgramid: str,
-    _: Transaction = Depends(get_transaction),
-    __: RedisClient = Depends(get_redis)
+    redis: RedisService = Depends(get_redis),
+    _: Transaction = Depends(get_transaction)
 ):
     """Get recently played tracks for a user (Spotify only)."""
     logger.info("[{hgramid}] recent tracks", hgramid=hgramid[:8])
 
-    integrations = await user_integrations_service(hgramid=hgramid)
-    tracks_response = await recent_played_tracks(hgramid=hgramid, integrations=integrations)
+    tracks_response = await process_recent_played_tracks(redis=redis, hgramid=hgramid)
     logger.success(
         "[{hgramid}] [sound] fetch yandex_music={len_yandex} and spotify={len_spotify}",
         hgramid=hgramid[:8],
@@ -64,8 +63,7 @@ async def scrobble_track(
     hgramid: str,
     track_id: str = Query(..., description="Track ID"),
     track_provider: int = Query(..., description="Track provider ID (i.e spotify=1)"),
-    _: Transaction = Depends(get_transaction),
-    __: RedisClient = Depends(get_redis),
+    _: Transaction = Depends(get_transaction)
 ):
     logger.info(
         "[{hgramid}] scrobbling {track_id} from {provider_id}",
@@ -92,8 +90,7 @@ async def save_tfile_url(
     hgramid: str,
     external_track_id: str = Query(..., description="External track ID"),
     tfile_url: str = Query(..., description="Telegram file url for re-using"),
-    _: Transaction = Depends(get_transaction),
-    __: RedisClient = Depends(get_redis),
+    _: Transaction = Depends(get_transaction)
 ):
     logger.info(
         "[{hgramid}] saving track {external_track_id} from {tfile_url}",

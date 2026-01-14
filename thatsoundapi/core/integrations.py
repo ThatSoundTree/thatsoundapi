@@ -1,10 +1,10 @@
 from loguru import logger
 
 from thatsoundapi.api.v1.models.users import UserIntegrationsResponse
-from thatsoundapi.db.redis import RedisClient
+from thatsoundapi.db.redis import RedisService
 from thatsoundapi.repositories import UserRepository
 
-async def user_integrations_service(hgramid: str) -> UserIntegrationsResponse:
+async def user_integrations_service(redis: RedisService, hgramid: str) -> UserIntegrationsResponse:
     user_integrations = UserIntegrationsResponse()
     user = await UserRepository.get_by_hgramid(hgramid)
 
@@ -13,7 +13,6 @@ async def user_integrations_service(hgramid: str) -> UserIntegrationsResponse:
         logger.info("[{hgramid}]: Created", hgramid=hgramid[:8])
         return user_integrations
 
-    redis = RedisClient.current()
     spotify_integration = await redis.has_spotify_integration(hgramid=hgramid)
     yandex_music_integrations = await redis.has_yandex_music_integration(hgramid=hgramid)
     user_integrations.spotify = spotify_integration

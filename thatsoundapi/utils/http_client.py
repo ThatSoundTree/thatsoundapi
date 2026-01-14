@@ -1,8 +1,10 @@
 from enum import StrEnum
-from typing import Any
+from typing import Any, Optional
 
 import httpx
 from loguru import logger
+
+from thatsoundapi.utils.retry import retry_policy
 
 
 class MethodEnum(StrEnum):
@@ -11,32 +13,71 @@ class MethodEnum(StrEnum):
     PUT = "PUT"
 
 
+
 class HttpClient:
+    _client: Optional[httpx.AsyncClient] = None
 
-    @staticmethod
-    async def __any_method(method: MethodEnum, url: str, **kwargs: Any) -> httpx.Response:
-        logger.debug("{method} {url}", method=method, url=url)
+    @classmethod
+    def startup(cls) -> None:
+        if cls._client is not None:
+            return
 
-        async with httpx.AsyncClient() as client:  # TODO: missing switch
-            if method == MethodEnum.GET:
-                response = await client.get(url, **kwargs)
-            elif method == MethodEnum.POST:
-                response = await client.post(url, **kwargs)
-            elif method == MethodEnum.PUT:
-                response = await client.put(url, **kwargs)
-            else:
-                raise NotImplementedError
+        cls._client = httpx.AsyncClient(
+            timeout=httpx.Timeout(10.0),
+            limits=httpx.Limits(
+                max_connections=100,
+                max_keepalive_connections=20,
+            ),
+        )
+
+        logger.info("HTTP client initialized")
+
+    @classmethod
+    async def shutdown(cls) -> None:
+        if cls._client is None:
+            return
+
+        await cls._client.aclose()
+        cls._client = None
+
+        logger.info("HTTP client closed")
+
+    @classmethod
+    @retry_policy
+    async def request(
+        cls,
+        method: MethodEnum,
+        url: str,
+        **kwargs: Any,
+    ) -> httpx.Response:
+        if cls._client is None:
+            raise RuntimeError("HttpClient is not initialized")
+
+        logger.debug("{method} {url}", method=method.value, url=url)
+
+        response = await cls._client.request(
+            method=method.value,
+            url=url,
+            **kwargs,
+        )
+
+        if response.status_code >= 400:
+            logger.warning(
+                "HTTP {status} from {url}",
+                status=response.status_code,
+                url=url,
+            )
 
         return response
 
-    @staticmethod
-    async def get(url: str, **kwargs: Any) -> httpx.Response:
-        return await HttpClient.__any_method(method=MethodEnum.GET, url=url, **kwargs)
+    @classmethod
+    async def get(cls, url: str, **kwargs: Any) -> httpx.Response:
+        return await cls.request(MethodEnum.GET, url, **kwargs)
 
-    @staticmethod
-    async def post(url: str, **kwargs: Any) -> httpx.Response:
-        return await HttpClient.__any_method(method=MethodEnum.POST, url=url, **kwargs)
+    @classmethod
+    async def post(cls, url: str, **kwargs: Any) -> httpx.Response:
+        return await cls.request(MethodEnum.POST, url, **kwargs)
 
-    @staticmethod
-    async def put(url: str, **kwargs: Any) -> httpx.Response:
-        return await HttpClient.__any_method(method=MethodEnum.PUT, url=url, **kwargs)
+    @classmethod
+    async def put(cls, url: str, **kwargs: Any) -> httpx.Response:
+        return await cls.request(MethodEnum.PUT, url, **kwargs)

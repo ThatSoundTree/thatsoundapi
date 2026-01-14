@@ -1,14 +1,11 @@
-import inspect
 import time
-from functools import wraps
-from typing import Callable, Any
 
 from loguru import logger
 
 from thatsoundapi.utils.exceptions.spotify import SpotifyExchangeTokenError, SpotifyTokenError, \
-    RefreshSpotifyTokenError, NoSpotifyIntegrationError
+    RefreshSpotifyTokenError
 
-from thatsoundapi.db.redis import RedisClient
+from thatsoundapi.db.redis import RedisService
 from thatsoundapi.core.spotify.models import SpotifyTokens
 from thatsoundapi.settings import get_spotify_settings
 from thatsoundapi.utils.http_client import HttpClient
@@ -52,16 +49,15 @@ async def is_token_alive(hgramid: str, access_token: str) -> bool:
     return True
 
 
-async def check_and_save_tokens(hgramid: str, tokens: SpotifyTokens) -> None:
+async def check_and_save_tokens(redis: RedisService, hgramid: str, tokens: SpotifyTokens) -> None:
     is_alive = await is_token_alive(hgramid=hgramid, access_token=tokens.access_token)
     if not is_alive:
         raise SpotifyTokenError
-    redis = RedisClient.current()
     await redis.save_spotify_tokens(hgramid=hgramid, tokens=tokens)
     logger.success("[{hgramid}] [spotify] saved tokens", hgramid=hgramid[:8])
 
 
-async def refresh_access_token(hgramid: str, old_tokens: SpotifyTokens) -> None:
+async def refresh_access_token(redis: RedisService, hgramid: str, old_tokens: SpotifyTokens) -> SpotifyTokens:
     spotify_settings = get_spotify_settings()
 
     response = await HttpClient.post(
@@ -86,34 +82,5 @@ async def refresh_access_token(hgramid: str, old_tokens: SpotifyTokens) -> None:
         expires_at=int(time.time()) + new_tokens_dict["expires_in"]
     )
 
-    await check_and_save_tokens(hgramid=hgramid, tokens=new_tokens)
-
-
-def keep_token_alive(func: Callable) -> Callable:
-    """Something in the way."""
-
-    @wraps(func)
-    async def wrapper(*args: Any, **kwargs: Any) -> Any:
-        spotify_settings = get_spotify_settings()
-        sig = inspect.signature(func)
-        bound_args = sig.bind(*args, **kwargs)
-        bound_args.apply_defaults()
-
-        hgramid = bound_args.arguments.get('hgramid')
-
-        if hgramid:
-            redis = RedisClient.current()
-            tokens_dict = await redis.get_spotify_tokens(hgramid=hgramid)
-            if not tokens_dict:
-                raise NoSpotifyIntegrationError
-            tokens = SpotifyTokens.model_validate(tokens_dict)
-
-            now = int(time.time())
-            time_until_expiry = tokens.expires_at - now if tokens.expires_at else 0
-
-            if time_until_expiry <= spotify_settings.TOKEN_EXPIRE_LIMIT:
-                await refresh_access_token(hgramid=hgramid, old_tokens=tokens)
-
-        return await func(*args, **kwargs)
-
-    return wrapper
+    await check_and_save_tokens(redis=redis, hgramid=hgramid, tokens=new_tokens)
+    return new_tokens
