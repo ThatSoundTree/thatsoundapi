@@ -8,6 +8,7 @@ from loguru import logger
 from thatsoundapi.api.v1.routes.callback import callback_router
 from thatsoundapi.api.v1.routes.spotify import spotify_router
 from thatsoundapi.api.v1.routes.users import user_router
+from thatsoundapi.db.redis import RedisClient
 from thatsoundapi.utils.exceptions.base import BaseAPIException, get_error_code_from_status_code
 from thatsoundapi.utils.http_client import HttpClient
 from thatsoundapi.utils.protocols import ErrorDetail, ErrorResponse
@@ -24,10 +25,13 @@ async def lifespan(app: FastAPI):
     # Startup
     logger.info("Starting application...")
     HttpClient.startup()
+    await RedisClient.startup()
+
     yield
     # Shutdown
     logger.info("Shutting down application...")
     await HttpClient.shutdown()
+    await RedisClient.shutdown()
 
 
 app = FastAPI(

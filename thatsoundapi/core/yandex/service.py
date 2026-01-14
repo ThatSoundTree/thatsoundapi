@@ -10,6 +10,7 @@ from thatsoundapi.core.yandex.models import YandexToken
 from thatsoundapi.core.yandex.oauth import check_and_save_token
 from thatsoundapi.db.redis import RedisClient
 from thatsoundapi.settings import get_yandex_settings
+from thatsoundapi.utils.exceptions.yandex import UnknownYandexMusicAPIError
 from thatsoundapi.utils.http_client import HttpClient
 
 
@@ -58,19 +59,24 @@ async def process_callback(
 
 async def get_recent_played_tracks(
     hgramid: str,
-    limit: int = 15,
+    access_token: str,
+    limit: int = 15
 ) -> list[TrackView]:
     settings = get_yandex_settings()
-    redis = RedisClient.current()
-    token = YandexToken.model_validate(
-        await redis.get_yandex_token(hgramid=hgramid)
-    )
 
     response = await HttpClient.get(
         url=f"{settings.API_BASE_URL}/music-history",
-        headers=settings.get_header(access_token=token.access_token),
+        headers=settings.get_header(access_token=access_token),
         params={"fullModelsCount": limit * FULL_MODEL_MULTIPLIER},
     )
+
+    if response.status_code != 200:
+        logger.error(
+            "[{hgramid}] [yandex] [recent] unknown api error: {error_text}",
+            hgramid=hgramid[:8],
+            error_text=response.text[:200]
+        )
+        raise UnknownYandexMusicAPIError
 
     items = [
         item
@@ -82,12 +88,7 @@ async def get_recent_played_tracks(
 
 
 async def get_current_playing_track(
-    hgramid: str,
+    access_token: str,
 ) -> TrackView | None:
-    redis = RedisClient.current()
-    token = YandexToken.model_validate(
-        await redis.get_yandex_token(hgramid=hgramid)
-    )
-
-    track = await get_current_track(token.access_token)
+    track = await get_current_track(access_token=access_token)
     return track

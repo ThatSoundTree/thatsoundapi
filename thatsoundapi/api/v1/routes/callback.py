@@ -9,7 +9,7 @@ from thatsoundapi.repositories import UserRepository
 from thatsoundapi.utils.exceptions.app import UserNotFoundError
 from thatsoundapi.utils.exceptions.spotify import InvalidSpotifyOAuthStateError
 
-from thatsoundapi.db.redis import RedisClient
+from thatsoundapi.db.redis import RedisClient, RedisService
 
 callback_router = APIRouter()
 
@@ -22,18 +22,17 @@ callback_router = APIRouter()
 async def spotify_callback(
     code: str = Query(..., description="Spotify authorization code"),
     state: str = Query(..., description="OAuth state parameter"),
-    __: RedisClient = Depends(get_redis)
+    redis: RedisService = Depends(get_redis)
 ):
     """Callback from Spotify OAuth."""
 
-    redis = RedisClient.current()
     hgramid = await redis.get_spotify_oauth_state(state=state)
     if not hgramid:
         logger.warning("[spotify] invalid or expired state: {state}", state[:8])
         raise InvalidSpotifyOAuthStateError
 
     logger.info("[{hgramid}] [spotify] callback", hgramid=hgramid[:8])
-    await process_callback_spotify(hgramid=hgramid, state=state, code=code)
+    await process_callback_spotify(redis=redis, hgramid=hgramid, state=state, code=code)
 
     return '<html><head><style>body { color: green; }</style></head><body><h1>Success! Return to <a href="https://t.me/thatsoundbot">@thatsoundbot</a></h1></body></html>'
 

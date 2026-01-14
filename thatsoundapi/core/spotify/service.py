@@ -9,17 +9,16 @@ from loguru import logger
 from thatsoundapi.api.v1.models.sounds import TrackView
 from thatsoundapi.utils.exceptions.spotify import NoSpotifyIntegrationError, UnknownSpotifyAPIError
 
-from thatsoundapi.db.redis import RedisClient
+from thatsoundapi.db.redis import RedisClient, RedisService
 from thatsoundapi.core.spotify.models import SpotifyTokens
 from thatsoundapi.core.spotify.oauth import exchange_code_for_tokens, check_and_save_tokens, refresh_access_token
 from thatsoundapi.settings import get_spotify_settings, Settings
 from thatsoundapi.utils.http_client import HttpClient
 
 
-async def initiate_login(hgramid: str) -> str:
+async def initiate_login(redis: RedisService,hgramid: str) -> str:
     state = secrets.token_hex(16)
     spotify_settings = get_spotify_settings()
-    redis = RedisClient.current()
 
     await redis.save_spotify_oauth_state(hgramid=hgramid, state=state, ttl=spotify_settings.OAUTH_STATE_TTL)
 
@@ -34,11 +33,10 @@ async def initiate_login(hgramid: str) -> str:
     return f"{spotify_settings.AUTHORIZE_URL}?{urlencode(params)}"
 
 
-async def process_callback(hgramid: str, state: str, code: str):
-    redis = RedisClient.current()
+async def process_callback(redis: RedisService, hgramid: str, state: str, code: str):
     await redis.delete_spotify_oauth_state(state=state)
     tokens = await exchange_code_for_tokens(hgramid=hgramid, code=code)
-    await check_and_save_tokens(hgramid=hgramid, tokens=tokens)
+    await check_and_save_tokens(redis=redis, hgramid=hgramid, tokens=tokens)
 
 
 async def process_refresh_tokens(hgramid: str):
@@ -51,45 +49,39 @@ async def process_refresh_tokens(hgramid: str):
     await refresh_access_token(hgramid=hgramid, old_tokens=old_tokens)
 
 
-async def get_recent_played_tracks(hgramid: str, limit: int = 15) -> dict[str, Any]:
+async def get_recent_played_tracks(hgramid: str, access_token: str, limit: int = 7) -> dict[str, Any]:
     spotify_settings = get_spotify_settings()
-    redis = RedisClient.current()
-    tokens_dict = await redis.get_spotify_tokens(hgramid=hgramid)
-    if not tokens_dict:
-        raise NoSpotifyIntegrationError
-    tokens = SpotifyTokens.model_validate(tokens_dict)
 
     response = await HttpClient.get(
         url=f"{spotify_settings.API_BASE_URL}/me/player/recently-played",
-        headers = spotify_settings.get_api_call_header(access_token=tokens.access_token),
+        headers = spotify_settings.get_api_call_header(access_token=access_token),
         params = {
             "limit": limit,
         }
     )
 
     if response.status_code != 200:
-        logger.error("[{hgramid}] [spotify] unknown api error: {error_text}", hgramid=hgramid[:8], error_text=response.text[:200])
+        logger.error(
+            "[{hgramid}] [spotify] [recent] unknown api error: {error_text}",
+            hgramid=hgramid[:8],
+            error_text=response.text[:200]
+        )
         raise UnknownSpotifyAPIError
 
     return response.json()  # type: ignore[no-any-return]
 
 
-async def get_current_playing_track(hgramid: str) -> dict | None:
+async def get_current_playing_track(hgramid: str, access_token: str) -> dict | None:
     spotify_settings = get_spotify_settings()
-    redis = RedisClient.current()
-    tokens_dict = await redis.get_spotify_tokens(hgramid=hgramid)
-    if not tokens_dict:
-        raise NoSpotifyIntegrationError
-    tokens = SpotifyTokens.model_validate(tokens_dict)
     response = await HttpClient.get(
         url=f"{spotify_settings.API_BASE_URL}/me/player/currently-playing",
-        headers=spotify_settings.get_api_call_header(access_token=tokens.access_token),
+        headers=spotify_settings.get_api_call_header(access_token=access_token),
     )
 
     if response.status_code == 204:
         return None
     elif response.status_code != 200:
-        logger.error("[{hgramid}] [spotify] unknown api error: {error_text}", hgramid=hgramid[:8], error_text=response.text[:200])
+        logger.error("[{hgramid}] [spotify] [current] unknown api error: {error_text}", hgramid=hgramid[:8], error_text=response.text[:200])
         return None
 
     data = response.json()
