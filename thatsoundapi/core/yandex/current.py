@@ -22,7 +22,7 @@ async def get_track_by_id(
         params={"track-ids": track_id},
     )
 
-    tracks = response.json().get("result") or []
+    tracks = response.json().get("result")
     if not tracks:
         return None
 
@@ -44,11 +44,21 @@ async def get_current_track(access_token: str) -> TrackView | None:
         ws_proto=ws_proto,
         device_id=device_id,
     )
-    queue = state.get("player_state", {}).get("player_queue", {})
-    index = queue.get("current_playable_index")
-    playables = queue.get("playable_list", [])
 
-    if index is None or not (0 <= index < len(playables)):
+    player_state = state.get("player_state")
+    if not player_state:
+        return None
+
+    queue = player_state.get("player_queue")
+    if not queue:
+        return None
+
+    index = queue.get("current_playable_index")
+    if index is None or index < 0:
+        return None
+
+    playables = queue.get("playable_list", [])
+    if index >= len(playables):
         return None
 
     playable_id = playables[index].get("playable_id")
