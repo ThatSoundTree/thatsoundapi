@@ -598,4 +598,6 @@ poetry run uvicorn main:app --reload
 
 ## License
 
-GPLv3
+MIT License
+
+Copyright (c) 2026 ThatSoundTree

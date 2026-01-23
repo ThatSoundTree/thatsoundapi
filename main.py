@@ -18,6 +18,8 @@ log_level = os.getenv("BACKEND_LOG_LEVEL", "INFO")
 logger.remove()
 logger.add(sys.stderr, level=log_level)
 
+show_docs = log_level.upper() == "DEBUG"
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -39,6 +41,9 @@ app = FastAPI(
     description="That Sound REST API",
     version="0.1.1",
     lifespan=lifespan,
+    docs_url="/docs" if show_docs else None,
+    redoc_url="/redoc" if show_docs else None,
+    openapi_url="/openapi.json" if show_docs else None,
 )
 
 app.include_router(user_router, prefix="/api/v1", tags=["Main"])
